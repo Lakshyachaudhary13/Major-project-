@@ -1,0 +1,10 @@
+node_modules/
+.env
+*.log
+database.db
+phone
+admin-tracking.txt
+password and gmail.txt
+__tests__/__snapshots__/
+coverage/
+.nyc_output/

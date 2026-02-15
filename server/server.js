@@ -1,0 +1,507 @@
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const session = require('express-session');
+const path = require('path');
+const mysql = require('mysql2');
+const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
+const crypto = require('crypto');
+const selfsigned = require('selfsigned');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 8080;
+const USE_HTTPS = process.env.USE_HTTPS === 'true'; // Set to 'true' in .env to enable HTTPS
+
+// Generate self-signed certificates if not present
+async function generateCertificates() {
+    const keyPath = path.join(__dirname, 'key.pem');
+    const certPath = path.join(__dirname, 'cert.pem');
+    
+    console.log('[CERT] Checking for certificates at:', keyPath);
+    const keyExists = fs.existsSync(keyPath);
+    const certExists = fs.existsSync(certPath);
+    console.log('[CERT] Key exists:', keyExists, '| Cert exists:', certExists);
+    
+    if (!keyExists || !certExists) {
+        console.log('[CERT] Generating self-signed certificates...');
+        const attrs = [{ name: 'commonName', value: 'localhost' }];
+        try {
+            const pems = await selfsigned.generate(attrs, { days: 365 });
+            console.log('[CERT] Generated certificate data, writing files...');
+            fs.writeFileSync(keyPath, pems.private);
+            console.log('[CERT] Key written successfully');
+            fs.writeFileSync(certPath, pems.cert);
+            console.log('[CERT] Cert written successfully');
+        } catch (err) {
+            console.error('[CERT] Error generating or writing certificates:', err.message);
+            throw err;
+        }
+    } else {
+        console.log('[CERT] Certificate files already exist');
+    }
+}
+
+// MySQL database setup
+const db = mysql.createPool({
+    host: process.env.DB_HOST || '127.0.0.1',
+    port: process.env.DB_PORT || 3306,
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || 'complaint_db',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
+
+// In production, require DB_PASSWORD to be set (avoid hardcoded default)
+if (process.env.NODE_ENV === 'production' && !process.env.DB_PASSWORD) {
+    console.error('FATAL: DB_PASSWORD must be set in production');
+    process.exit(1);
+}
+
+// Use promise wrapper so we can use async/await with db.execute()
+const dbPromise = db.promise ? db.promise() : db;
+
+// Initialize routers after db is defined (use promise-wrapped pool)
+const studentsRouter = require('./routes/students')(dbPromise);
+const complaintsRouter = require('./routes/complaints')(dbPromise);
+const analyticsRouter = require('./routes/analytics')(dbPromise);
+const teachersRouter = require('./routes/teachers')(dbPromise);
+
+// Initialize database after routers are set up
+initializeDatabase().catch(console.error);
+
+// Initialize database tables
+async function initializeDatabase() {
+    try {
+        // Students table - updated for Gmail login
+        await new Promise((resolve, reject) => {
+            db.execute(`CREATE TABLE IF NOT EXISTS students (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                studentId VARCHAR(255) UNIQUE NOT NULL,
+                gmail VARCHAR(255) NOT NULL,
+                phone VARCHAR(50),
+                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`, (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
+// Teachers/Admins table - updated for Gmail login with specific IDs
+        await new Promise((resolve, reject) => {
+            db.execute(`CREATE TABLE IF NOT EXISTS teachers (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                gmail VARCHAR(255) UNIQUE NOT NULL,
+                teacherId VARCHAR(255) UNIQUE NOT NULL,
+                department VARCHAR(255),
+                password VARCHAR(255) NOT NULL,
+                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`, (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
+        // Complaints table
+        await new Promise((resolve, reject) => {
+            db.execute(`CREATE TABLE IF NOT EXISTS complaints (
+                id VARCHAR(255) PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                studentId VARCHAR(255) NOT NULL,
+                studentEmail VARCHAR(255) NOT NULL,
+                studentGmail VARCHAR(255) NOT NULL,
+                type VARCHAR(255) NOT NULL,
+                category VARCHAR(255) DEFAULT 'general',
+                description TEXT NOT NULL,
+                status VARCHAR(255) DEFAULT 'pending',
+                assignedTo VARCHAR(255),
+                resolvedBy VARCHAR(255),
+                resolvedAt TIMESTAMP NULL,
+                resolutionNotes TEXT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (studentId) REFERENCES students (studentId)
+            )`, (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
+        // Complaint status history table - for tracking status changes
+        await new Promise((resolve, reject) => {
+            db.execute(`CREATE TABLE IF NOT EXISTS complaint_history (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                complaintId VARCHAR(255) NOT NULL,
+                status VARCHAR(255) NOT NULL,
+                changedBy VARCHAR(255),
+                notes TEXT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (complaintId) REFERENCES complaints (id)
+            )`, (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
+        console.log('Database initialization completed successfully');
+    } catch (error) {
+        console.error('Database initialization failed:', error);
+        throw error;
+    }
+}
+
+// Security middleware
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
+
+// Security headers
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+            scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+            imgSrc: ["'self'", "data:", "https:"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        },
+    },
+}));
+
+// Compression
+app.use(compression());
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.'
+});
+app.use('/api/', limiter);
+
+// CORS
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (process.env.NODE_ENV !== 'production') {
+            // In development, allow all origins
+            return callback(null, true);
+        }
+        
+        // In production, check against whitelist
+        const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
+
+// Body parsing
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+
+// Global device tracking
+const deviceTracker = new Map();
+
+// Phone access logging middleware (only external traffic)
+app.use((req, res, next) => {
+    const fs = require('fs').promises;
+    const timestamp = new Date().toISOString();
+    const ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
+    const userAgent = req.get('User-Agent') || 'unknown';
+
+    // Skip logging for localhost and internal traffic
+    if (ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.1.')) {
+        return next();
+    }
+
+    // Extract device info from User-Agent
+    let deviceInfo = 'Unknown Device';
+    if (userAgent.includes('Android')) {
+        deviceInfo = 'Android Phone';
+        if (userAgent.includes('Samsung')) deviceInfo = 'Samsung Android Phone';
+        else if (userAgent.includes('Google')) deviceInfo = 'Google Android Phone';
+        else if (userAgent.includes('OnePlus')) deviceInfo = 'OnePlus Android Phone';
+        else if (userAgent.includes('Xiaomi')) deviceInfo = 'Xiaomi Android Phone';
+        else if (userAgent.includes('Huawei')) deviceInfo = 'Huawei Android Phone';
+        else if (userAgent.includes('Oppo')) deviceInfo = 'Oppo Android Phone';
+        else if (userAgent.includes('Vivo')) deviceInfo = 'Vivo Android Phone';
+    } else if (userAgent.includes('iPhone')) {
+        deviceInfo = 'iPhone';
+        if (userAgent.includes('iPhone 15')) deviceInfo = 'iPhone 15';
+        else if (userAgent.includes('iPhone 14')) deviceInfo = 'iPhone 14';
+        else if (userAgent.includes('iPhone 13')) deviceInfo = 'iPhone 13';
+        else if (userAgent.includes('iPhone 12')) deviceInfo = 'iPhone 12';
+        else if (userAgent.includes('iPhone 11')) deviceInfo = 'iPhone 11';
+    } else if (userAgent.includes('iPad')) {
+        deviceInfo = 'iPad';
+    } else if (userAgent.includes('Windows')) {
+        deviceInfo = 'Windows PC';
+    } else if (userAgent.includes('Mac')) {
+        deviceInfo = 'Mac Computer';
+    } else if (userAgent.includes('Linux')) {
+        deviceInfo = 'Linux Device';
+    }
+
+    // Update device tracker with latest timestamp
+    deviceTracker.set(ip, {
+        timestamp,
+        deviceInfo,
+        userAgent,
+        lastSeen: timestamp
+    });
+
+    // Immediately update phone file with all current devices (non-blocking)
+    updatePhoneFile();
+
+    next();
+});
+
+// Function to update phone file with current device status
+async function updatePhoneFile() {
+    const fs = require('fs').promises;
+    const phoneFilePath = path.join(__dirname, '..', 'phone');
+
+    try {
+        let content = '# Phone Access Log - Real-time Device Tracking\n';
+        content += '# Format: Timestamp | IP Address | Device Info | User Agent | Status\n';
+        content += '# Updated: ' + new Date().toISOString() + '\n\n';
+
+        for (const [ip, device] of deviceTracker) {
+            const status = 'ACTIVE';
+            content += `${device.timestamp} | ${ip} | ${device.deviceInfo} | ${device.userAgent} | ${status}\n`;
+        }
+
+        await fs.writeFile(phoneFilePath, content);
+    } catch (err) {
+        console.error('Error updating phone file:', err);
+    }
+}
+
+// Periodic cleanup of old devices (devices not seen for 1 hour)
+setInterval(() => {
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+    for (const [ip, device] of deviceTracker) {
+        if (new Date(device.lastSeen) < oneHourAgo) {
+            deviceTracker.delete(ip);
+        }
+    }
+
+    // Update file after cleanup
+    updatePhoneFile();
+}, 5 * 60 * 1000); // Check every 5 minutes
+
+// Session configuration
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'complaint-management-secret', // Change this in production
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: process.env.NODE_ENV === 'production' } // Set to true for HTTPS in production
+}));
+
+// Serve static files (frontend)
+app.use(express.static(path.join(__dirname, '..')));
+
+// API routes
+app.use('/api/students', studentsRouter);
+app.use('/api/complaints', complaintsRouter);
+app.use('/api/analytics', analyticsRouter);
+app.use('/api/teachers', teachersRouter);
+
+// Function to log admin actions
+async function logAdminAction(timestamp, action, username, status, details) {
+    const fs = require('fs').promises;
+    const logFilePath = path.join(__dirname, '..', 'admin-tracking.txt');
+
+    try {
+        const logEntry = `${timestamp} | ${action} | ${username} | ${status} | ${details}\n`;
+        await fs.appendFile(logFilePath, logEntry);
+    } catch (err) {
+        console.error('Error logging admin action:', err);
+    }
+}
+
+// Admin registration route
+app.post('/api/admin/register', async (req, res) => {
+    const { username, password } = req.body; // Removed email as it's not stored
+    const timestamp = new Date().toISOString();
+
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    try {
+        // Check if username already exists
+        const [existingAdminRows] = await db.execute('SELECT id FROM admins WHERE username = ?', [username]);
+        const existingAdmin = existingAdminRows[0];
+
+        if (existingAdmin) {
+            // Log failed registration
+            await logAdminAction(timestamp, 'REGISTER', username, 'FAILED', 'Username already exists');
+            return res.status(400).json({ error: 'Username already exists' });
+        }
+
+        // Hash password and insert new admin
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const [result] = await db.execute('INSERT INTO admins (username, password) VALUES (?, ?)', [username, hashedPassword]);
+        const adminId = result.insertId;
+
+        // Log successful registration
+        await logAdminAction(timestamp, 'REGISTER', username, 'SUCCESS', `Admin ID: ${adminId}`);
+
+        res.status(201).json({ message: 'Registration successful' });
+    } catch (error) {
+        console.error('Error registering admin:', error);
+        // Log registration error
+        await logAdminAction(timestamp, 'REGISTER', username, 'ERROR', 'Database error');
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Admin login route
+app.post('/api/admin/login', async (req, res) => {
+    const { username, password } = req.body;
+    const timestamp = new Date().toISOString();
+
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    try {
+        const [adminRows] = await db.execute('SELECT * FROM admins WHERE username = ?', [username]);
+        const admin = adminRows[0];
+
+        if (!admin) {
+            // Log failed login attempt
+            await logAdminAction(timestamp, 'LOGIN_FAILED', username, 'FAILED', 'Admin not found');
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, admin.password);
+        if (!isPasswordValid) {
+            // Log failed login attempt
+            await logAdminAction(timestamp, 'LOGIN_FAILED', username, 'FAILED', 'Invalid password');
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        req.session.adminId = admin.id;
+        req.session.adminUsername = admin.username;
+
+        // Log successful login
+        await logAdminAction(timestamp, 'LOGIN_SUCCESS', username, 'SUCCESS', `Session ID: ${req.session.id}`);
+
+        res.json({ message: 'Login successful', admin: { username: admin.username } });
+    } catch (error) {
+        console.error('Error querying admin:', error);
+        // Log login error
+        await logAdminAction(timestamp, 'LOGIN_FAILED', username, 'ERROR', 'Database query error');
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Admin logout
+app.post('/api/admin/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).json({ error: 'Could not log out' });
+        }
+        res.json({ message: 'Logout successful' });
+    });
+});
+
+// Admin session check
+app.get('/api/admin/session', (req, res) => {
+    if (req.session.adminId) {
+        res.json({
+            adminId: req.session.adminId,
+            adminUsername: req.session.adminUsername
+        });
+    } else {
+        res.status(401).json({ error: 'Not logged in' });
+    }
+});
+
+// Serve admin login page
+app.get('/admin-login', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'admin-login.html'));
+});
+
+// Default route to serve index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+});
+
+// Start server
+async function startServer() {
+    try {
+        console.log('[SERVER] Starting server...');
+        
+        let server;
+        
+        if (USE_HTTPS) {
+            console.log('[SERVER] Generating certificates...');
+            await generateCertificates();
+            console.log('[SERVER] Certificates ready');
+            
+            const keyPath = path.join(__dirname, 'key.pem');
+            const certPath = path.join(__dirname, 'cert.pem');
+            console.log('[SERVER] Reading certificate files...');
+            const key = fs.readFileSync(keyPath);
+            const cert = fs.readFileSync(certPath);
+            console.log('[SERVER] Certificate files read successfully');
+            
+            const httpsOptions = { key, cert };
+            console.log('[SERVER] Creating HTTPS server...');
+            server = https.createServer(httpsOptions, app);
+            console.log('[SERVER] HTTPS server created');
+        } else {
+            console.log('[SERVER] Creating HTTP server...');
+            server = http.createServer(app);
+            console.log('[SERVER] HTTP server created');
+        }
+        
+        server.on('error', (err) => {
+            console.error('[SERVER] Server error:', err);
+            process.exit(1);
+        });
+        
+        console.log('[SERVER] Starting to listen on port', PORT);
+        server.listen(PORT, '0.0.0.0', () => {
+            const protocol = USE_HTTPS ? 'HTTPS' : 'HTTP';
+            const url = `${USE_HTTPS ? 'https' : 'http'}://0.0.0.0:${PORT}`;
+            console.log(`[SERVER] ${protocol} Server running on ${url}`);
+            console.log(`[SERVER] Access from current machine: ${USE_HTTPS ? 'https' : 'http'}://127.0.0.1:${PORT}`);
+            console.log(`[SERVER] Access from other devices: ${USE_HTTPS ? 'https' : 'http'}://YOUR_IP_ADDRESS:${PORT}`);
+            if (USE_HTTPS) {
+                console.log('[SERVER] Note: Self-signed certificate - browsers will show security warning');
+            }
+        });
+    } catch (err) {
+        console.error('[SERVER] Failed to start server:', err.message);
+        console.error(err);
+        process.exit(1);
+    }
+}
+
+startServer();
