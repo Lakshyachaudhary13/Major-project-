@@ -569,4 +569,9 @@ async function startServer() {
     }
 }
 
-startServer();
+if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    // Export the app for serverless platforms like Vercel
+    module.exports = app;
+} else {
+    startServer();
+}

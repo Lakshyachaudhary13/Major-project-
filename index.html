@@ -1,227 +1,245 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>College Complaint Portal</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --primary: #4f46e5;
-            --primary-dark: #4338ca;
-            --secondary: #10b981;
-            --dark: #1f2937;
-            --gray: #6b7280;
-            --light: #f3f4f6;
-            --white: #ffffff;
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>College Complaint Portal Landing Page</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#8c2bee",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#191022",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
         }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+    </script>
+<style>
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        header {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            padding: 1rem 2rem;
-            border-radius: 16px;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        .glass-dark {
+            background: rgba(25, 16, 34, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .logo { display: flex; align-items: center; gap: 12px; font-size: 1.3rem; font-weight: 700; color: var(--primary); }
-        .nav-links { display: flex; gap: 1rem; }
-        .nav-links a {
-            text-decoration: none;
-            color: var(--dark);
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            transition: all 0.3s;
+        .purple-gradient-text {
+            background: linear-gradient(to right, #8c2bee, #bc77ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        .nav-links a:hover { background: var(--primary); color: white; }
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s;
-            cursor: pointer;
-            border: none;
-            font-size: 0.95rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: rgb(20, 14, 14);
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(79,70,229,0.4); }
-        .btn-secondary {
-            background: white;
-            color: var(--primary);
-            border: 2px solid var(--primary);
-        }
-        .btn-secondary:hover { background: var(--primary); color: white; }
-        .hero {
-            min-height: 80vh;
-            display: flex;
-            align-items: center;
-            gap: 4rem;
-        }
-        .hero-content { flex: 1; }
-        .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            color: rgb(21, 20, 20);
-            line-height: 1.2;
-            margin-bottom: 1.5rem;
-        }
-        .hero h1 span { background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-        .hero p { font-size: 1.2rem; color: rgba(16, 15, 15, 0.9); margin-bottom: 2rem; }
-        .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .btn-large { padding: 1rem 2rem; font-size: 1.1rem; }
-        .hero-visual { flex: 1; }
-        .floating-cards { position: relative; height: 400px; }
-        .floating-card {
-            position: absolute;
-            background: white;
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            animation: float 3s ease-in-out infinite;
-        }
-        .floating-card:nth-child(1) { top: 10%; left: 10%; }
-        .floating-card:nth-child(2) { top: 35%; right: 5%; animation-delay: 0.5s; }
-        .floating-card:nth-child(3) { bottom: 15%; left: 20%; animation-delay: 1s; }
-        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-15px)} }
-        .card-icon {
-            width: 50px; height: 50px;
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem; margin-bottom: 1rem;
-        }
-        .card-icon.blue { background: rgba(79,70,229,0.1); color: var(--primary); }
-        .card-icon.green { background: rgba(16,185,129,0.1); color: var(--secondary); }
-        .card-icon.orange { background: rgba(245,158,11,0.1); color: #f59e0b; }
-        .floating-card h4 { font-size: 1rem; margin-bottom: 0.5rem; }
-        .floating-card p { font-size: 0.85rem; color: var(--gray); margin: 0; }
-        .features { background: white; padding: 80px 2rem; border-radius: 16px; margin-top: 2rem; }
-        .section-header { text-align: center; max-width: 600px; margin: 0 auto 60px; }
-        .section-header h2 { font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
-        .feature-card { padding: 2rem; border-radius: 16px; background: var(--light); transition: all 0.3s; }
-        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
-        .feature-icon { width: 60px; height: 60px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.5rem; }
-        .feature-card h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
-        .feature-card p { color: var(--gray); line-height: 1.7; }
-        footer { background: var(--dark); color: white; padding: 40px 2rem; margin-top: 2rem; border-radius: 16px; }
-        .footer-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; }
-        @media (max-width: 968px) { .hero { flex-direction: column; text-align: center; } .hero-buttons { justify-content: center; } }
     </style>
 </head>
-<body>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased">
+<div class="relative min-h-screen flex flex-col">
+<!-- Background Accents -->
+<div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+<div class="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]"></div>
+<div class="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]"></div>
+</div>
+<!-- Header -->
+<header class="sticky top-0 z-50 px-6 py-4 flex justify-center">
+<nav class="glass dark:glass-dark w-full max-w-7xl rounded-2xl px-8 py-3 flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-3">
+<div class="bg-primary p-2 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-2xl">account_balance</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight">Complaint Portal</h2>
+</div>
+<div class="hidden md:flex items-center gap-10">
+<a class="text-sm font-semibold hover:text-primary transition-colors" href="#home">Home</a>
+<a class="text-sm font-semibold hover:text-primary transition-colors" href="#features">Features</a>
+<a class="text-sm font-semibold hover:text-primary transition-colors" href="#contact">Contact</a>
+</div>
+<div class="flex items-center gap-3">
+<a href="student.html" class="px-5 py-2.5 rounded-lg border border-primary/30 text-primary text-sm font-bold hover:bg-primary/5 transition-all text-center">
+Student Portal
+</a>
+<a href="teacher-login.html" class="bg-primary px-5 py-2.5 rounded-lg text-white text-sm font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all text-center">
+Teacher Portal
+</a>
+</div>
+</nav>
+</header>
+<!-- Hero Section -->
+<main class="flex-grow flex flex-col items-center">
+<section id="home" class="max-w-7xl w-full px-8 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+<div class="flex flex-col gap-8">
+<div class="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-bold w-fit uppercase tracking-widest">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+                        Campus Transparency Initiative
+                    </div>
+<h1 class="text-5xl md:text-7xl font-black leading-[1.1] tracking-tight text-slate-900 dark:text-white">
+                        Your Voice Matters, <br/>
+<span class="purple-gradient-text">Make It Heard</span>
+</h1>
+<p class="text-lg md:text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+                        A premium, secure platform for students and faculty to drive positive change. Transform feedback into action through our transparent resolution pipeline.
+                    </p>
+<div class="flex flex-wrap gap-4 pt-4">
+<a href="student.html" class="bg-primary px-8 py-4 rounded-xl text-white font-bold text-lg shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 hover:-translate-y-0.5 transition-all text-center block">
+Get Started
+</a>
+<a href="#features" class="glass dark:glass-dark px-8 py-4 rounded-xl text-slate-800 dark:text-white font-bold text-lg hover:bg-white transition-all text-center block">
+Learn More
+</a>
+</div>
+</div>
+<!-- Floating Cards Aesthetic -->
+<div class="relative h-[500px] hidden lg:block">
+<!-- Feature Card 1 -->
+<div class="absolute top-0 right-10 glass dark:glass-dark p-6 rounded-2xl shadow-2xl w-72 transform hover:scale-105 transition-transform">
+<div class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+<span class="material-symbols-outlined">notifications_active</span>
+</div>
+<h3 class="font-bold text-lg mb-2">Email Notifications</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Instant updates sent directly to your institutional inbox.</p>
+</div>
+<!-- Feature Card 2 -->
+<div class="absolute top-1/3 left-0 glass dark:glass-dark p-6 rounded-2xl shadow-2xl w-72 transform translate-x-12 translate-y-8 hover:scale-105 transition-transform z-10">
+<div class="bg-primary/10 text-primary w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<h3 class="font-bold text-lg mb-2">Quick Resolution</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Direct pipeline to department heads for faster processing.</p>
+</div>
+<!-- Feature Card 3 -->
+<div class="absolute bottom-4 right-4 glass dark:glass-dark p-6 rounded-2xl shadow-2xl w-72 transform hover:scale-105 transition-transform">
+<div class="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+<span class="material-symbols-outlined">shield_person</span>
+</div>
+<h3 class="font-bold text-lg mb-2">Secure &amp; Private</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Bank-grade encryption ensuring your identity stays protected.</p>
+</div>
+<!-- Decorative Element -->
+<div class="absolute inset-0 flex items-center justify-center -z-10">
+<div class="w-80 h-80 bg-primary/20 rounded-full blur-[100px]"></div>
+</div>
+</div>
+</section>
+<!-- Features Grid -->
+<section id="features" class="w-full max-w-7xl px-8 py-20">
+<div class="text-center mb-16">
+<h2 class="text-3xl md:text-4xl font-black mb-4">Why Choose Our Portal?</h2>
+<div class="h-1.5 w-24 bg-primary mx-auto rounded-full"></div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Feature 1 -->
+<div class="bg-white dark:bg-slate-900/50 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-primary/40 transition-all shadow-sm flex flex-col gap-4 group">
+<div class="bg-primary/5 text-primary w-14 h-14 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+<span class="material-symbols-outlined text-3xl">verified_user</span>
+</div>
+<h3 class="text-xl font-bold">Gmail Auth</h3>
+<p class="text-slate-500 dark:text-slate-400 leading-relaxed">Seamless and secure single sign-on using your university Google account.</p>
+</div>
+<!-- Feature 2 -->
+<div class="bg-white dark:bg-slate-900/50 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-primary/40 transition-all shadow-sm flex flex-col gap-4 group">
+<div class="bg-primary/5 text-primary w-14 h-14 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+<span class="material-symbols-outlined text-3xl">devices</span>
+</div>
+<h3 class="text-xl font-bold">Mobile Friendly</h3>
+<p class="text-slate-500 dark:text-slate-400 leading-relaxed">Optimized experience for all devices. Lodge complaints on the go.</p>
+</div>
+<!-- Feature 3 -->
+<div class="bg-white dark:bg-slate-900/50 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-primary/40 transition-all shadow-sm flex flex-col gap-4 group">
+<div class="bg-primary/5 text-primary w-14 h-14 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+<span class="material-symbols-outlined text-3xl">update</span>
+</div>
+<h3 class="text-xl font-bold">Real-time Updates</h3>
+<p class="text-slate-500 dark:text-slate-400 leading-relaxed">Track the progress of your ticket from submission to resolution live.</p>
+</div>
+<!-- Feature 4 -->
+<div class="bg-white dark:bg-slate-900/50 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-primary/40 transition-all shadow-sm flex flex-col gap-4 group">
+<div class="bg-primary/5 text-primary w-14 h-14 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+<span class="material-symbols-outlined text-3xl">schedule</span>
+</div>
+<h3 class="text-xl font-bold">24/7 Access</h3>
+<p class="text-slate-500 dark:text-slate-400 leading-relaxed">The portal never sleeps. Submit your concerns at your convenience.</p>
+</div>
+</div>
+</section>
+<!-- Call to Action -->
+<section class="w-full max-w-7xl px-8 py-20">
+<div class="bg-background-dark dark:bg-slate-900 p-12 md:p-20 rounded-[2.5rem] relative overflow-hidden text-center flex flex-col items-center gap-8">
+<!-- Accent for dark section -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] pointer-events-none"></div>
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-primary/10 blur-[100px] pointer-events-none"></div>
+<h2 class="text-4xl md:text-5xl font-black text-white max-w-3xl leading-tight">Ready to improve our campus environment together?</h2>
+<p class="text-slate-400 text-lg max-w-xl">Join thousands of students and faculty members who are already using the platform to make a difference.</p>
+<a href="student.html" class="bg-white text-background-dark px-10 py-4 rounded-xl font-black text-lg hover:scale-[1.05] transition-transform shadow-2xl text-center inline-block">
+Create Your First Ticket
+</a>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer id="contact" class="w-full bg-white dark:bg-background-dark/50 border-t border-slate-100 dark:border-slate-800 py-12">
+<div class="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-3">
+<div class="bg-primary/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary text-xl">account_balance</span>
+</div>
+<span class="font-bold text-lg">Complaint Portal</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm">
+                    © 2024 University Administration. All rights reserved.
+                </p>
+<div class="flex gap-8">
+<a class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" href="#">Privacy Policy</a>
+</div>
+</div>
+</footer>
+</div>
+
     <!-- public URL banner (hidden by default) -->
-    <div id="publicUrlBanner" class="public-url-banner hidden">
-        <span id="publicUrlText"></span>
-        <button class="copy-btn">Copy</button>
-    </div>
-    <div class="container">
-        <header>
-            <div class="logo"><i class="fas fa-graduation-cap"></i><span>Complaint Portal</span></div>
-            <div class="nav-links">
-                <a href="#home">Home</a>
-                <a href="#features">Features</a>
-                <a href="#contact">Contact</a>
-            </div>
-            <div style="display: flex; gap: 1rem;">
-                <a href="student.html" class="btn btn-primary"><i class="fas fa-user-graduate"></i> Student</a>
-                <a href="teacher-login.html" class="btn btn-secondary"><i class="fas fa-chalkboard-teacher"></i> Teacher</a>
-            </div>
-        </header>
-
-        <section class="hero" id="home">
-            <div class="hero-content">
-                <h1>Your Voice Matters<br><span>Make It Heard</span></h1>
-                <p>Submit complaints, suggestions, and feedback easily. Track your requests in real-time and get timely resolutions.</p>
-                <div class="hero-buttons">
-                    <a href="student.html" class="btn btn-primary btn-large"><i class="fas fa-paper-plane"></i> Get Started</a>
-                    <a href="#features" class="btn btn-secondary btn-large" style="background:rgba(14, 14, 14, 0.2);color:rgb(10, 10, 10);border-color:rgb(17, 16, 16);">Learn More</a>
-                </div>
-            </div>
-            <div class="hero-visual">
-                <div class="floating-cards">
-                    <div class="floating-card">
-                        <div class="card-icon blue"><i class="fas fa-envelope"></i></div>
-                        <h4>Email Notifications</h4>
-                        <p>Get instant updates on your complaint status</p>
-                    </div>
-                    <div class="floating-card">
-                        <div class="card-icon green"><i class="fas fa-check-circle"></i></div>
-                        <h4>Quick Resolution</h4>
-                        <p>Fast tracking and resolution of issues</p>
-                    </div>
-                    <div class="floating-card">
-                        <div class="card-icon orange"><i class="fas fa-shield-alt"></i></div>
-                        <h4>Secure & Private</h4>
-                        <p>Your data is always protected</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="features" id="features">
-            <div class="section-header">
-                <h2>Why Choose Our Portal?</h2>
-            </div>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon" style="background:rgba(79,70,229,0.1);color:var(--primary);"><i class="fab fa-google"></i></div>
-                    <h3>Gmail Authentication</h3>
-                    <p>Secure login using your Gmail account.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon" style="background:rgba(16,185,129,0.1);color:var(--secondary);"><i class="fas fa-mobile-alt"></i></div>
-                    <h3>Mobile Friendly</h3>
-                    <p>Access from any device seamlessly.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon" style="background:rgba(245,158,11,0.1);color:#f59e0b;"><i class="fas fa-bell"></i></div>
-                    <h3>Real-time Updates</h3>
-                    <p>Get email notifications on status changes.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon" style="background:rgba(239,68,68,0.1);color:#ef4444;"><i class="fas fa-clock"></i></div>
-                    <h3>24/7 Access</h3>
-                    <p>Submit complaints anytime, anywhere.</p>
-                </div>
-            </div>
-        </section>
-
-        <footer id="contact">
-            <div class="footer-content">
-                <div><a><p>&copy; 2026 College Complaint Portal. All rights reserved.</a></p></div>
-                <div style="display:flex;gap:2rem;">
-                    <a href="#" style="color:rgba(255,255,255,0.7);text-decoration:none;">Privacy Policy</a>
-                    <a href="#" style="color:rgba(255,255,255,0.7);text-decoration:none;">Terms of Service</a>
-                </div>
-            </div>
-        </footer>
+    <div id="publicUrlBanner" class="hidden absolute top-0 left-0 w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center py-2 px-4 shadow-lg z-[100] border-b border-indigo-400">
+        <span id="publicUrlText" class="font-semibold text-sm mr-4 truncate inline-block max-w-[70%] align-middle tracking-wide shadow-text"></span>
+        <button class="bg-white text-indigo-700 hover:bg-indigo-50 font-bold py-1 px-4 rounded text-xs transition duration-200 border border-indigo-100 shadow-sm uppercase tracking-wider" onclick="(function(btn){
+            const text = document.getElementById('publicUrlText').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                btn.classList.add('bg-green-100', 'text-green-800');
+                btn.classList.remove('text-indigo-700');
+                setTimeout(() => {
+                    btn.innerText = 'Copy';
+                    btn.classList.remove('bg-green-100', 'text-green-800');
+                    btn.classList.add('text-indigo-700');
+                }, 2000);
+            });
+        })(this)">Copy URL</button>
     </div>
     <script>
         document.querySelectorAll('a[href^="#"]').forEach(a => {
             a.addEventListener('click', e => {
-                e.preventDefault();
-                document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});
+                const targetId = a.getAttribute('href');
+                if(targetId === '#') return;
+                const el = document.querySelector(targetId);
+                if(el){
+                    e.preventDefault();
+                    el.scrollIntoView({behavior:'smooth'});
+                }
             });
         });
     </script>
-</body>
-</html>
+</body></html>
