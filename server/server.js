@@ -311,7 +311,11 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'complaint-management-secret', // Change this in production
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production' } // Set to true for HTTPS in production
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production', // Set to true for HTTPS in production
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
 }));
 
 // Serve static files (frontend)
@@ -441,9 +445,9 @@ app.get('/admin-login', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'admin-login.html'));
 });
 
-// Default route to serve index.html
+// Default route to serve student dashboard
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'student-dashboard.html'));
 });
 
 // Global error handler
@@ -452,13 +456,78 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
+// Get local IP address
+function getLocalIP() {
+    const os = require('os');
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                return iface.address;
+            }
+        }
+    }
+    return '127.0.0.1';
+}
+
+// Function to get the public URL (ngrok or local)
+function getPublicURL() {
+    const fs = require('fs');
+    const publicUrlPath = path.join(__dirname, '..', 'public-url.txt');
+    
+    // Check if public URL file exists (set by ngrok script)
+    if (fs.existsSync(publicUrlPath)) {
+        try {
+            const publicUrl = fs.readFileSync(publicUrlPath, 'utf8').trim();
+            if (publicUrl && publicUrl.startsWith('http')) {
+                return publicUrl;
+            }
+        } catch (err) {
+            console.log('[SERVER] Error reading public URL:', err.message);
+        }
+    }
+    
+    // Fall back to local IP
+    const localIP = getLocalIP();
+    return `http://${localIP}:${PORT}`;
+}
+
+// API endpoint to get public URL
+app.get('/api/public-url', (req, res) => {
+    const publicUrl = getPublicURL();
+    res.json({ 
+        publicUrl,
+        localIP: getLocalIP(),
+        port: PORT
+    });
+});
+
+const LOCAL_IP = getLocalIP();
+
 // Start server
 async function startServer() {
     try {
         console.log('[SERVER] Starting server...');
         
-        let server;
+        const HTTPS_PORT = process.env.HTTPS_PORT || 8443;
         
+        // Always start HTTP server
+        console.log('[SERVER] Creating HTTP server...');
+        const httpServer = http.createServer(app);
+        console.log('[SERVER] HTTP server created');
+        
+        httpServer.on('error', (err) => {
+            console.error('[SERVER] HTTP Server error:', err);
+        });
+        
+        console.log('[SERVER] Starting HTTP server on port', PORT);
+        httpServer.listen(PORT, '0.0.0.0', () => {
+            console.log(`[SERVER] HTTP Server running on http://0.0.0.0:${PORT}`);
+            console.log(`[SERVER] Access HTTP from current machine: http://127.0.0.1:${PORT}`);
+            console.log(`[SERVER] Access from OTHER DEVICES/LAPTOP: http://${LOCAL_IP}:${PORT}`);
+        });
+        
+        // Start HTTPS server if USE_HTTPS is enabled
         if (USE_HTTPS) {
             console.log('[SERVER] Generating certificates...');
             await generateCertificates();
@@ -473,30 +542,26 @@ async function startServer() {
             
             const httpsOptions = { key, cert };
             console.log('[SERVER] Creating HTTPS server...');
-            server = https.createServer(httpsOptions, app);
+            const httpsServer = https.createServer(httpsOptions, app);
             console.log('[SERVER] HTTPS server created');
+            
+            httpsServer.on('error', (err) => {
+                console.error('[SERVER] HTTPS Server error:', err);
+            });
+            
+            console.log('[SERVER] Starting HTTPS server on port', HTTPS_PORT);
+            httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
+                console.log(`[SERVER] HTTPS Server running on https://0.0.0.0:${HTTPS_PORT}`);
+                console.log(`[SERVER] Access HTTPS from current machine: https://127.0.0.1:${HTTPS_PORT}`);
+                console.log(`[SERVER] Access HTTPS from other devices: https://YOUR_IP_ADDRESS:${HTTPS_PORT}`);
+                console.log('[SERVER] Note: Self-signed certificate - browsers will show security warning');
+            });
         } else {
-            console.log('[SERVER] Creating HTTP server...');
-            server = http.createServer(app);
-            console.log('[SERVER] HTTP server created');
+            console.log('[SERVER] HTTPS is disabled. Set USE_HTTPS=true in .env to enable it.');
         }
         
-        server.on('error', (err) => {
-            console.error('[SERVER] Server error:', err);
-            process.exit(1);
-        });
+        console.log('[SERVER] Both servers started successfully!');
         
-        console.log('[SERVER] Starting to listen on port', PORT);
-        server.listen(PORT, '0.0.0.0', () => {
-            const protocol = USE_HTTPS ? 'HTTPS' : 'HTTP';
-            const url = `${USE_HTTPS ? 'https' : 'http'}://0.0.0.0:${PORT}`;
-            console.log(`[SERVER] ${protocol} Server running on ${url}`);
-            console.log(`[SERVER] Access from current machine: ${USE_HTTPS ? 'https' : 'http'}://127.0.0.1:${PORT}`);
-            console.log(`[SERVER] Access from other devices: ${USE_HTTPS ? 'https' : 'http'}://YOUR_IP_ADDRESS:${PORT}`);
-            if (USE_HTTPS) {
-                console.log('[SERVER] Note: Self-signed certificate - browsers will show security warning');
-            }
-        });
     } catch (err) {
         console.error('[SERVER] Failed to start server:', err.message);
         console.error(err);

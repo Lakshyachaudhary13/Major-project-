@@ -19,6 +19,7 @@
     "express-session": "^1.17.3",
     "helmet": "^7.1.0",
     "mysql2": "^3.6.5",
+    "ngrok": "^5.0.0-beta.2",
     "nodemailer": "^6.9.7",
     "pem": "^1.14.8",
     "selfsigned": "^5.5.0"

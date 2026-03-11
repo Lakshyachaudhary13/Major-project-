@@ -1,0 +1,84 @@
+te_path>e:/55/complaint-management-system/PROJECT_STRUCTURE.txt</absolute_path>
+<parameter name="content">📁 COMPLAINT MANAGEMENT SYSTEM - Project Structure
+══════════════════════════════════════════════════
+
+📂 complaint-management-system/
+│
+├── 🌐 FRONTEND FILES (HTML Pages)
+│   ├── index.html                 → Main landing page
+│   ├── admin-login.html           → Admin login page
+│   ├── admin.html                 → Admin dashboard
+│   ├── student.html               → Student portal
+│   ├── student-register.html      → Student registration
+│   ├── teacher-login.html         → Teacher login
+│   ├── teacher-register.html      → Teacher registration
+│   ├── teacher-portal.html        → Teacher portal
+│   └── teacher-dashboard.html     → Teacher dashboard
+│
+├── 🎨 STYLING
+│   └── style.css                  → All styles
+│
+├── 📜 JAVASCRIPT FILES
+│   ├── script.js                  → Main frontend script
+│   ├── check-admin.js             → Check admin utility
+│   ├── fix-admin.js               → Fix admin utility
+│   ├── init-db.js                 → Database setup
+│   ├── linkedinPostAutomation.js  → LinkedIn automation
+│   ├── test-mysql.js              → MySQL test
+│   └── test-start.js              → Start test
+│
+├── 🧪 TESTING
+│   └── __tests__/script.test.js   → Unit tests
+│
+├── ⚙️ CONFIG FILES
+│   ├── package.json               → Dependencies
+│   ├── package-lock.json         → Lock file
+│   └── .gitignore                → Git ignore
+│
+├── 📝 SERVER FILES
+│   ├── server/server.js          → Main server (run this!)
+│   ├── server/generate-cert.js   → SSL certificate
+│   ├── server/cert.pem           → Certificate
+│   ├── server/key.pem            → SSL Key
+│   └── server/database.db        → Database
+│
+├── 📁 SERVER DATA
+│   └── server/data/
+│       ├── complaints.json       → Complaints stored here
+│       └── students.json          → Students stored here
+│
+├── 📁 SERVER ROUTES (API)
+│   └── server/routes/
+│       ├── students.js           → Student API
+│       ├── teachers.js           → Teacher API
+│       ├── complaints.js         → Complaint API
+│       └── analytics.js          → Analytics API
+│
+├── 📁 SCRIPTS
+│   └── scripts/
+│       ├── add-hosts-windows.ps1 → Windows hosts setup
+│       └── alter_students.js     → Alter students
+│
+├── 📄 DOCUMENTATION
+│   ├── TODO.md                   → Tasks to do
+│   ├── TODO_backend.md           → Backend tasks
+│   ├── TODO_mysql.md             → MySQL tasks
+│   ├── TODO_major.md             → Major tasks
+│   ├── TODO_ngrok.md             → Ngrok tasks
+│   ├── LINKEDIN_POST_DRAFT.txt  → Post draft
+│   ├── admin-tracking.txt        → Admin tracking
+│   ├── password and gmail.txt    → Saved credentials
+│   └── phone                     → Phone numbers
+│
+══════════════════════════════════════════════════
+📋 HOW TO RUN:
+   1. Go to: cd complaint-management-system
+   2. Install: npm install
+   3. Run server: node server/server.js
+   4. Open browser: https://localhost:3000
+══════════════════════════════════════════════════
+📋 USER ROLES:
+   • Admin   → Manage all complaints & teachers
+   • Teacher → View & manage assigned complaints
+   • Student → Submit complaints
+══════════════════════════════════════════════════

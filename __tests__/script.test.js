@@ -17,7 +17,15 @@ Object.defineProperty(window, 'localStorage', {
 global.fetch = jest.fn();
 
 // Mock DOM elements
-document.body.innerHTML = `
+// include banner that script will populate
+const bannerHtml = `
+  <div id="publicUrlBanner" class="public-url-banner hidden">
+    <span id="publicUrlText"></span>
+    <button class="copy-btn">Copy</button>
+  </div>
+`;
+
+document.body.innerHTML = bannerHtml + `
   <form id="loginForm">
     <input id="gmail" value="test@gmail.com" />
     <input id="loginGmail" value="test@gmail.com" />
@@ -190,6 +198,24 @@ describe('Complaint Management System', () => {
     expect(event.preventDefault).toHaveBeenCalled();
   });
 
+  test('student-register page has back to home button', () => {
+    // simulate the register page DOM
+    document.body.innerHTML = `
+      <div class="auth-container">
+        <div class="auth-card">
+          <div class="toggle-link"></div>
+          <div class="home-link">
+            <a href="index.html"><i class="fas fa-home"></i> Back to Home</a>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const link = document.querySelector('.home-link a');
+    expect(link).not.toBeNull();
+    expect(link.getAttribute('href')).toBe('index.html');
+  });
+
   test('should render student complaints', async () => {
     const testComplaints = [
       { id: '1', name: 'John', studentId: '123', type: 'complaint', category: 'general', description: 'Test', status: 'pending', timestamp: new Date().toISOString() }
@@ -275,5 +301,28 @@ describe('Complaint Management System', () => {
     // So we test the logic indirectly through complaint submission
     expect(recentTimestamp).toBeDefined();
     expect(oldTimestamp).toBeDefined();
+  });
+
+  test('fetchPublicUrl should populate banner and copy to clipboard', async () => {
+    const banner = document.getElementById('publicUrlBanner');
+    const text = document.getElementById('publicUrlText');
+    const copyBtn = banner.querySelector('.copy-btn');
+
+    // mock clipboard
+    navigator.clipboard = { writeText: jest.fn().mockResolvedValue() };
+
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ publicUrl: 'https://example.ngrok.io' })
+    });
+
+    await window.fetchPublicUrl();
+
+    expect(banner.classList.contains('hidden')).toBe(false);
+    expect(text.textContent).toBe('https://example.ngrok.io');
+
+    // click copy button
+    copyBtn.click();
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.ngrok.io');
   });
 });

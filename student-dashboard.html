@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+:root{
+--primary:#4f46e5;
+--secondary:#10b981;
+--danger:#ef4444;
+--accent:#f59e0b;
+--dark:#1f2937;
+--gray:#6b7280;
+--light:#f3f4f6;
+}
+
+body{
+font-family:'Inter',sans-serif;
+background:linear-gradient(135deg,#667eea,#764ba2);
+min-height:100vh;
+padding:20px;
+}
+
+.dashboard-container{
+max-width:1200px;
+margin:auto;
+}
+
+.dashboard-header{
+background:white;
+border-radius:20px;
+padding:2rem;
+margin-bottom:2rem;
+box-shadow:0 10px 40px rgba(0,0,0,0.2);
+text-align:center;
+}
+
+.dashboard-header h1{
+margin-top:10px;
+color:var(--dark);
+}
+
+.dashboard-grid{
+display:grid;
+grid-template-columns:1fr 2fr;
+gap:20px;
+}
+
+.card{
+background:white;
+border-radius:20px;
+padding:20px;
+box-shadow:0 10px 40px rgba(0,0,0,0.2);
+}
+
+.form-group{
+margin-bottom:15px;
+}
+
+label{
+font-weight:600;
+font-size:14px;
+display:block;
+margin-bottom:5px;
+}
+
+input,select,textarea{
+width:100%;
+padding:10px;
+border-radius:8px;
+border:1px solid #ddd;
+}
+
+textarea{
+resize:none;
+}
+
+.btn{
+width:100%;
+background:var(--primary);
+color:white;
+border:none;
+padding:12px;
+border-radius:10px;
+font-weight:600;
+cursor:pointer;
+margin-top:10px;
+}
+
+.logout-btn{
+background:var(--danger);
+}
+
+.complaints-list{
+max-height:500px;
+overflow-y:auto;
+}
+
+.complaint-item{
+border:1px solid #eee;
+border-radius:10px;
+padding:15px;
+margin-bottom:10px;
+}
+
+.status{
+padding:3px 8px;
+border-radius:5px;
+color:white;
+font-size:12px;
+}
+
+.pending{background:orange;}
+.resolved{background:green;}
+
+.toast{
+position:fixed;
+top:20px;
+right:20px;
+background:green;
+color:white;
+padding:10px 15px;
+border-radius:8px;
+}
+
+@media(max-width:768px){
+.dashboard-grid{
+grid-template-columns:1fr;
+}
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="dashboard-container">
+
+<div class="dashboard-header">
+<i class="fas fa-user-graduate" style="font-size:40px;color:#4f46e5"></i>
+<h1>Student Dashboard</h1>
+<p id="studentInfo">Submit and track your complaints</p>
+<p id="studentIdDisplay" style="color: var(--primary); font-weight: 600; margin-top: 5px;"></p>
+</div>
+
+<div class="dashboard-grid">
+
+<div class="card">
+
+<h2>Submit Complaint</h2>
+
+<form id="complaintForm">
+
+<div class="form-group">
+<label>Complaint Type</label>
+<select id="type" required>
+<option value="">Select</option>
+<option value="academic">Academic</option>
+<option value="hostel">Hostel</option>
+<option value="library">Library</option>
+<option value="other">Other</option>
+</select>
+</div>
+
+<div class="form-group">
+<label>Category</label>
+<select id="category">
+<option value="general">General</option>
+<option value="urgent">Urgent</option>
+<option value="feedback">Feedback</option>
+</select>
+</div>
+
+<div class="form-group">
+<label>Description</label>
+<textarea id="description" rows="4" required></textarea>
+</div>
+
+<button class="btn">Submit Complaint</button>
+
+</form>
+
+<button class="btn logout-btn" onclick="logout()">Logout</button>
+
+</div>
+
+
+<div class="card">
+
+<h2>Your Complaints</h2>
+
+<div id="complaintsList" class="complaints-list"></div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+// Display logged in student info
+function displayStudentInfo() {
+    const loggedStudent = JSON.parse(localStorage.getItem("loggedStudent"));
+    const studentIdDisplay = document.getElementById("studentIdDisplay");
+    
+    if (loggedStudent && studentIdDisplay) {
+        studentIdDisplay.innerHTML = '<i class="fas fa-id-card"></i> Student ID: ' + loggedStudent.studentId;
+    }
+}
+
+let complaints=JSON.parse(localStorage.getItem("complaints")) || []
+
+const form=document.getElementById("complaintForm")
+
+form.addEventListener("submit",function(e){
+
+e.preventDefault()
+
+let type=document.getElementById("type").value
+let category=document.getElementById("category").value
+let description=document.getElementById("description").value
+
+let complaint={
+id:Date.now(),
+type:type,
+category:category,
+description:description,
+status:"pending",
+date:new Date().toLocaleString()
+}
+
+complaints.push(complaint)
+
+localStorage.setItem("complaints",JSON.stringify(complaints))
+
+form.reset()
+
+showToast("Complaint Submitted")
+
+loadComplaints()
+
+})
+
+function loadComplaints(){
+
+let container=document.getElementById("complaintsList")
+
+if(complaints.length===0){
+container.innerHTML="<p>No complaints submitted</p>"
+return
+}
+
+container.innerHTML=""
+
+complaints.reverse().forEach(c=>{
+
+let div=document.createElement("div")
+
+div.className="complaint-item"
+
+div.innerHTML=`
+
+<h4>${c.type} - ${c.category}</h4>
+<p>${c.description}</p>
+<p><b>Status:</b> <span class="status ${c.status}">${c.status}</span></p>
+<p>${c.date}</p>
+
+`
+
+container.appendChild(div)
+
+})
+
+}
+
+function showToast(msg){
+
+let toast=document.createElement("div")
+
+toast.className="toast"
+
+toast.innerText=msg
+
+document.body.appendChild(toast)
+
+setTimeout(()=>{
+toast.remove()
+},3000)
+
+}
+
+function logout(){
+
+alert("Logged out")
+
+localStorage.removeItem("loggedStudent")
+
+window.location.href="index.html"
+
+}
+
+displayStudentInfo()
+loadComplaints()
+
+</script>
+
+</body>
+</html>
+

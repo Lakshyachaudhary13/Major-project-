@@ -1,7 +1,51 @@
 const express = require('express');
 const router = express.Router();
+const nodemailer = require('nodemailer');
 
 module.exports = (db) => {
+
+// Email configuration (replace with your SMTP settings)
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.EMAIL_USER || 'your-email@gmail.com',
+        pass: process.env.EMAIL_PASS || 'your-app-password'
+    }
+});
+
+// Send student registration confirmation email
+async function sendStudentRegistrationEmail(student) {
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: student.gmail,
+        subject: 'Welcome to Complaint Management System - Registration Successful',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #4f46e5;">Welcome, ${student.name}!</h2>
+                <p>Your student account has been created successfully.</p>
+                <div style="background: #f3f4f6; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <p><strong>Name:</strong> ${student.name}</p>
+                    <p><strong>Student ID:</strong> ${student.studentId}</p>
+                    <p><strong>Email:</strong> ${student.gmail}</p>
+                    <p><strong>Phone:</strong> ${student.phone || 'Not provided'}</p>
+                </div>
+                <p>You can now login to submit complaints and track their status.</p>
+                <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+                    If you have any questions, please contact the administrator.
+                </p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('Student registration email sent successfully');
+    } catch (error) {
+        console.error('Error sending student registration email:', error);
+    }
+}
 
 // Register a new student
 router.post('/register', async (req, res) => {
@@ -32,6 +76,10 @@ router.post('/register', async (req, res) => {
         req.session.studentName = name;
         req.session.studentGmail = gmail;
         req.session.studentPhone = phone;
+
+        // Send registration confirmation email
+        const student = { name, gmail, studentId, phone };
+        sendStudentRegistrationEmail(student);
 
         res.status(201).json({ message: 'Registration successful', student: { id: insertResult.insertId, name, gmail, studentId, phone } });
     } catch (error) {
@@ -109,3 +157,4 @@ router.get('/session', (req, res) => {
 
 return router;
 };
+

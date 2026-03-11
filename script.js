@@ -14,6 +14,55 @@ let allComplaints = [];
 // Utility Functions
 // ========================================
 
+// Fetch and display public URL on page load
+async function initPublicURL() {
+    try {
+        const response = await fetch(`${API_BASE}/public-url`);
+        const data = await response.json();
+        
+        // Create or update public URL display
+        let urlBanner = document.getElementById('publicUrlBanner');
+        if (!urlBanner) {
+            urlBanner = document.createElement('div');
+            urlBanner.id = 'publicUrlBanner';
+            urlBanner.className = 'public-url-banner';
+            document.body.insertBefore(urlBanner, document.body.firstChild);
+        }
+        
+        const isNgrok = data.publicUrl.includes('ngrok');
+        urlBanner.innerHTML = `
+            <div class="public-url-content">
+                <span class="public-url-label">${isNgrok ? '🌐 Public URL' : '💻 Local URL'}:</span>
+                <span class="public-url-value" id="publicUrlValue">${data.publicUrl}</span>
+                <button class="copy-btn" onclick="copyPublicURL()" title="Copy URL">📋 Copy</button>
+                <span class="copy-success" id="copySuccess" style="display:none;">✓ Copied!</span>
+            </div>
+        `;
+    } catch (error) {
+        console.log('Could not fetch public URL:', error);
+    }
+}
+
+// Copy public URL to clipboard
+function copyPublicURL() {
+    const urlElement = document.getElementById('publicUrlValue');
+    const successElement = document.getElementById('copySuccess');
+    
+    if (urlElement) {
+        navigator.clipboard.writeText(urlElement.textContent).then(() => {
+            if (successElement) {
+                successElement.style.display = 'inline';
+                setTimeout(() => {
+                    successElement.style.display = 'none';
+                }, 2000);
+            }
+        });
+    }
+}
+
+// Make copyPublicURL available globally
+window.copyPublicURL = copyPublicURL;
+
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -130,7 +179,13 @@ function displayStudentComplaints(complaints) {
     const listElement = document.getElementById('complaintsList');
     if (!listElement) return;
 
-    if (!complaints || complaints.length === 0) {
+    // ensure we have an array to avoid runtime errors in tests or bad API responses
+    if (!Array.isArray(complaints)) {
+        console.warn('Expected complaints array but got', complaints);
+        complaints = [];
+    }
+
+    if (complaints.length === 0) {
         listElement.innerHTML = '<p style="text-align: center; color: var(--gray-color);">No complaints yet. Submit your first complaint!</p>';
         return;
     }
@@ -404,7 +459,12 @@ function displayStudents(students) {
     const tbody = document.getElementById('studentsTableBody');
     if (!tbody) return;
 
-    if (!students || students.length === 0) {
+    if (!Array.isArray(students)) {
+        console.warn('Expected students array but got', students);
+        students = [];
+    }
+
+    if (students.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No students found</td></tr>';
         return;
     }
@@ -514,12 +574,23 @@ function closeUpdateModal() {
     }
 }
 
-async function updateComplaintStatus(event) {
-    event.preventDefault();
+async function updateComplaintStatus(eventOrId) {
+    // helper to let tests call with just an ID string
+    let complaintId, status, resolutionNotes;
 
-    const complaintId = document.getElementById('updateComplaintId')?.value;
-    const status = document.getElementById('updateStatus')?.value;
-    const resolutionNotes = document.getElementById('updateNotes')?.value;
+    if (typeof eventOrId === 'string') {
+        complaintId = eventOrId;
+        status = document.getElementById('updateStatus')?.value;
+        resolutionNotes = document.getElementById('updateNotes')?.value;
+    } else {
+        const event = eventOrId;
+        if (event && typeof event.preventDefault === 'function') {
+            event.preventDefault();
+        }
+        complaintId = document.getElementById('updateComplaintId')?.value;
+        status = document.getElementById('updateStatus')?.value;
+        resolutionNotes = document.getElementById('updateNotes')?.value;
+    }
 
     if (!complaintId || !status) {
         showToast('Please select a status', 'error');
@@ -639,10 +710,43 @@ function teacherSwitchTab(tabId) {
 }
 
 // ========================================
+// Public URL helper
+// ========================================
+
+async function fetchPublicUrl() {
+    try {
+        const resp = await fetch('/api/public-url');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const banner = document.getElementById('publicUrlBanner');
+        const textEl = document.getElementById('publicUrlText');
+        if (banner && textEl && data.publicUrl) {
+            textEl.textContent = data.publicUrl;
+            banner.classList.remove('hidden');
+            // copy button
+            const copyBtn = banner.querySelector('.copy-btn');
+            if (copyBtn) {
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(data.publicUrl).then(() => {
+                        showToast('URL copied to clipboard');
+                    });
+                };
+            }
+            // add padding to body so banner doesn't cover content
+            document.body.style.paddingTop = '2.5rem';
+        }
+    } catch (e) {
+        console.error('Error fetching public URL:', e);
+    }
+}
+
+// ========================================
 // Initialize Portal Functions
 // ========================================
 
 function initStudentPortal() {
+    // Initialize public URL display
+    fetchPublicUrl();
     checkStudentSession();
 
     // Login form
@@ -701,6 +805,8 @@ function initStudentPortal() {
 }
 
 function initTeacherPortal() {
+    // Initialize public URL display
+    fetchPublicUrl();
     checkTeacherSession();
 
     // Login form
@@ -788,3 +894,16 @@ window.closeUpdateModal = closeUpdateModal;
 window.deleteComplaint = deleteComplaint;
 window.filterComplaints = filterComplaints;
 window.showToast = showToast;
+
+// expose public url helper for tests/other pages
+window.fetchPublicUrl = fetchPublicUrl;
+
+// aliases for tests (and legacy code)
+window.handleStudentRegister = handleStudentRegistration;
+window.handleComplaintSubmit = handleComplaintSubmission;
+window.handleAdminLogin = handleTeacherLogin;
+// also export the real names just in case
+window.handleStudentRegistration = handleStudentRegistration;
+window.handleComplaintSubmission = handleComplaintSubmission;
+window.handleTeacherLogin = handleTeacherLogin;
+window.updateComplaintStatus = updateComplaintStatus;

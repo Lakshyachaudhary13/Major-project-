@@ -78,7 +78,11 @@ async function sendStatusUpdateEmail(complaint, newStatus, resolutionNotes) {
 
 // Submit a new complaint
 router.post('/', async (req, res) => {
+    console.log('Complaint submission attempt');
+    console.log('Session:', req.session);
+    
     if (!req.session.studentId) {
+        console.log('No studentId in session');
         return res.status(401).json({ error: 'Not logged in' });
     }
 
@@ -87,16 +91,20 @@ router.post('/', async (req, res) => {
     const studentName = req.session.studentName;
     const studentGmail = req.session.studentGmail;
 
+    console.log('Complaint data:', { type, description, category, studentId, studentName, studentGmail });
+
     if (!type || !description) {
         return res.status(400).json({ error: 'Type and description are required' });
     }
 
     const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     try {
-        await db.execute('INSERT INTO complaints (id, name, studentId, studentGmail, type, category, description, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, studentName, studentId, studentGmail, type, category, description, 'pending', timestamp]);
+        console.log('Attempting database insert...');
+        const result = await db.execute('INSERT INTO complaints (id, name, studentId, studentEmail, studentGmail, type, category, description, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, studentName, studentId, studentGmail, studentGmail, type, category, description, 'pending', timestamp]);
+        console.log('Database insert result:', result);
 
         const newComplaint = { id, name: studentName, studentId, studentGmail, type, category, description, status: 'pending', timestamp };
 
