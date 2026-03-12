@@ -2,7 +2,7 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const router = express.Router();
 
-module.exports = (db) => {
+module.exports = (supabase) => {
 
 // Email configuration (replace with your SMTP settings)
 const transporter = nodemailer.createTransport({
@@ -102,9 +102,23 @@ router.post('/', async (req, res) => {
 
     try {
         console.log('Attempting database insert...');
-        const result = await db.execute('INSERT INTO complaints (id, name, studentId, studentEmail, studentGmail, type, category, description, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, studentName, studentId, studentGmail, studentGmail, type, category, description, 'pending', timestamp]);
-        console.log('Database insert result:', result);
+        const { error: insertError } = await supabase
+            .from('complaints')
+            .insert([{
+                id, 
+                name: studentName, 
+                studentId, 
+                studentEmail: studentGmail, 
+                studentGmail, 
+                type, 
+                category, 
+                description, 
+                status: 'pending', 
+                timestamp
+            }]);
+
+        if (insertError) throw insertError;
+        console.log('Database insert successful');
 
         const newComplaint = { id, name: studentName, studentId, studentGmail, type, category, description, status: 'pending', timestamp };
 
@@ -127,8 +141,14 @@ router.get('/my', async (req, res) => {
     }
 
     try {
-        const [rows] = await db.execute('SELECT * FROM complaints WHERE studentId = ? ORDER BY timestamp DESC', [req.session.studentId]);
-        res.json(rows);
+        const { data: rows, error } = await supabase
+            .from('complaints')
+            .select('*')
+            .eq('studentId', req.session.studentId)
+            .order('timestamp', { ascending: false });
+
+        if (error) throw error;
+        res.json(rows || []);
     } catch (error) {
         console.error('Error fetching student complaints:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -139,28 +159,24 @@ router.get('/my', async (req, res) => {
 router.get('/', async (req, res) => {
     const { search, status, category } = req.query;
     
-    let query = 'SELECT * FROM complaints WHERE 1=1';
-    const params = [];
+    let query = supabase.from('complaints').select('*');
 
     if (search) {
-        query += ' AND (name LIKE ? OR studentId LIKE ? OR description LIKE ?)';
-        const searchTerm = `%${search}%`;
-        params.push(searchTerm, searchTerm, searchTerm);
+        query = query.or(`name.ilike.%${search}%,studentId.ilike.%${search}%,description.ilike.%${search}%`);
     }
     if (status) {
-        query += ' AND status = ?';
-        params.push(status);
+        query = query.eq('status', status);
     }
     if (category) {
-        query += ' AND category = ?';
-        params.push(category);
+        query = query.eq('category', category);
     }
 
-    query += ' ORDER BY timestamp DESC';
+    query = query.order('timestamp', { ascending: false });
 
     try {
-        const [rows] = await db.execute(query, params);
-        res.json(rows);
+        const { data: rows, error } = await query;
+        if (error) throw error;
+        res.json(rows || []);
     } catch (error) {
         console.error('Error fetching complaints:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -172,11 +188,16 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [rows] = await db.execute('SELECT * FROM complaints WHERE id = ?', [id]);
-        if (rows.length === 0) {
+        const { data: complaint, error } = await supabase
+            .from('complaints')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error || !complaint) {
             return res.status(404).json({ error: 'Complaint not found' });
         }
-        res.json(rows[0]);
+        res.json(complaint);
     } catch (error) {
         console.error('Error fetching complaint:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -193,10 +214,13 @@ router.put('/:id/status', async (req, res) => {
     }
 
     try {
-        const [rows] = await db.execute('SELECT * FROM complaints WHERE id = ?', [id]);
-        const complaint = rows[0];
+        const { data: complaint, error: fetchError } = await supabase
+            .from('complaints')
+            .select('*')
+            .eq('id', id)
+            .single();
 
-        if (!complaint) {
+        if (fetchError || !complaint) {
             return res.status(404).json({ error: 'Complaint not found' });
         }
 
@@ -204,8 +228,17 @@ router.put('/:id/status', async (req, res) => {
         const resolvedBy = req.session.teacherName || req.session.adminUsername || 'Admin';
         const resolvedAt = (status === 'resolved' || status === 'rejected') ? new Date().toISOString() : null;
 
-        await db.execute('UPDATE complaints SET status = ?, resolutionNotes = ?, resolvedBy = ?, resolvedAt = ? WHERE id = ?', 
-            [status, resolutionNotes || null, resolvedBy, resolvedAt, id]);
+        const { error: updateError } = await supabase
+            .from('complaints')
+            .update({ 
+                status, 
+                resolutionNotes: resolutionNotes || null, 
+                resolvedBy, 
+                resolvedAt 
+            })
+            .eq('id', id);
+
+        if (updateError) throw updateError;
 
         complaint.status = status;
         complaint.resolutionNotes = resolutionNotes;
@@ -228,10 +261,13 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [rows] = await db.execute('SELECT * FROM complaints WHERE id = ?', [id]);
-        const complaint = rows[0];
+        const { data: complaint, error: fetchError } = await supabase
+            .from('complaints')
+            .select('*')
+            .eq('id', id)
+            .single();
 
-        if (!complaint) {
+        if (fetchError || !complaint) {
             return res.status(404).json({ error: 'Complaint not found' });
         }
 
@@ -239,7 +275,12 @@ router.delete('/:id', async (req, res) => {
             return res.status(400).json({ error: 'Can only delete resolved complaints' });
         }
 
-        await db.execute('DELETE FROM complaints WHERE id = ?', [id]);
+        const { error: deleteError } = await supabase
+            .from('complaints')
+            .delete()
+            .eq('id', id);
+
+        if (deleteError) throw deleteError;
 
         res.json({ message: 'Complaint deleted successfully' });
     } catch (error) {

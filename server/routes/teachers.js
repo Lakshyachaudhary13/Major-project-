@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 
-module.exports = (db) => {
+module.exports = (supabase) => {
 
 // Email configuration (replace with your SMTP settings)
 const transporter = nodemailer.createTransport({
@@ -61,18 +61,30 @@ router.post('/register', async (req, res) => {
     }
 
     try {
-        const [existingRows] = await db.execute('SELECT teacherId FROM teachers WHERE teacherId = ?', [teacherId]);
-        if (existingRows.length > 0) {
+        const { data: existingRows } = await supabase
+            .from('teachers')
+            .select('teacherId')
+            .eq('teacherId', teacherId);
+
+        if (existingRows && existingRows.length > 0) {
             return res.status(400).json({ error: 'Teacher ID already registered' });
         }
 
-        const [gmailRows] = await db.execute('SELECT gmail FROM teachers WHERE gmail = ?', [gmail]);
-        if (gmailRows.length > 0) {
+        const { data: gmailRows } = await supabase
+            .from('teachers')
+            .select('gmail')
+            .eq('gmail', gmail);
+
+        if (gmailRows && gmailRows.length > 0) {
             return res.status(400).json({ error: 'Gmail already registered' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const [insertResult] = await db.execute('INSERT INTO teachers (name, gmail, teacherId, department, password) VALUES (?, ?, ?, ?, ?)', [name, gmail, teacherId, department || null, hashedPassword]);
+        const { error: insertError } = await supabase
+            .from('teachers')
+            .insert([{ name, gmail, teacherId, department: department || null, password: hashedPassword }]);
+        
+        if (insertError) throw insertError;
         
         // Send registration confirmation email
         const teacher = { name, gmail, teacherId, department };
@@ -94,10 +106,14 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        const [loginResult] = await db.execute('SELECT * FROM teachers WHERE gmail = ? AND teacherId = ?', [gmail, teacherId]);
-        const teacher = loginResult[0];
+        const { data: teacher, error } = await supabase
+            .from('teachers')
+            .select('*')
+            .eq('gmail', gmail)
+            .eq('teacherId', teacherId)
+            .single();
 
-        if (!teacher) {
+        if (error || !teacher) {
             return res.status(404).json({ error: 'Teacher not found' });
         }
 
@@ -122,8 +138,13 @@ router.post('/login', async (req, res) => {
 // Get all teachers
 router.get('/', async (req, res) => {
     try {
-        const [result] = await db.execute('SELECT id, name, gmail, teacherId, department, createdAt FROM teachers ORDER BY createdAt DESC');
-        res.json(result);
+        const { data: result, error } = await supabase
+            .from('teachers')
+            .select('id, name, gmail, teacherId, department, createdAt')
+            .order('createdAt', { ascending: false });
+
+        if (error) throw error;
+        res.json(result || []);
     } catch (error) {
         console.error('Error fetching teachers:', error);
         res.status(500).json({ error: 'Internal server error' });

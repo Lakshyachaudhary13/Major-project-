@@ -25,7 +25,7 @@ const bannerHtml = `
   </div>
 `;
 
-document.body.innerHTML = bannerHtml + `
+const initialHtml = bannerHtml + `
   <form id="loginForm">
     <input id="gmail" value="test@gmail.com" />
     <input id="loginGmail" value="test@gmail.com" />
@@ -91,6 +91,8 @@ document.body.innerHTML = bannerHtml + `
   <table id="studentsTableBody"></table>
 `;
 
+document.body.innerHTML = initialHtml;
+
 // Load the script
 const scriptPath = path.join(__dirname, '..', 'script.js');
 const scriptContent = fs.readFileSync(scriptPath, 'utf8');
@@ -113,6 +115,7 @@ window.allComplaints = [];
 
 describe('Complaint Management System', () => {
   beforeEach(() => {
+    document.body.innerHTML = initialHtml;
     localStorage.clear();
     jest.clearAllMocks();
     fetch.mockClear();
@@ -276,9 +279,9 @@ describe('Complaint Management System', () => {
   });
 
   test('should handle admin login', async () => {
-    document.getElementById('gmail').value = 'admin@test.com';
-    document.getElementById('teacherId').value = 'T001';
-    document.getElementById('password').value = 'password123';
+    document.getElementById('loginGmail').value = 'admin@test.com';
+    document.getElementById('loginTeacherId').value = 'T001';
+    document.getElementById('loginPassword').value = 'password123';
     const event = { preventDefault: jest.fn() };
 
     fetch.mockResolvedValueOnce({
@@ -286,7 +289,7 @@ describe('Complaint Management System', () => {
       json: async () => ({ message: 'Login successful' })
     });
 
-    await handleAdminLogin(event);
+    await handleTeacherLogin(event);
 
     expect(fetch).toHaveBeenCalledWith('/api/teachers/login', expect.any(Object));
     expect(event.preventDefault).toHaveBeenCalled();

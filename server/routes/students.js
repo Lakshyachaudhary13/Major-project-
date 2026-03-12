@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 
-module.exports = (db) => {
+module.exports = (supabase) => {
 
-// Email configuration (replace with your SMTP settings)
+// Email configuration
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
@@ -60,17 +60,21 @@ router.post('/register', async (req, res) => {
     }
 
     try {
-        const [existingRows] = await db.execute('SELECT studentId FROM students WHERE studentId = ?', [studentId]);
-        if (existingRows.length > 0) {
+        const { data: existingRow } = await supabase.from('students').select('studentId').eq('studentId', studentId).single();
+        if (existingRow) {
             return res.status(400).json({ error: 'Student ID already registered' });
         }
 
-        const [gmailRows] = await db.execute('SELECT gmail FROM students WHERE gmail = ?', [gmail]);
-        if (gmailRows.length > 0) {
+        const { data: gmailRow } = await supabase.from('students').select('gmail').eq('gmail', gmail).single();
+        if (gmailRow) {
             return res.status(400).json({ error: 'Gmail already registered' });
         }
 
-        const [insertResult] = await db.execute('INSERT INTO students (name, email, gmail, studentId, phone) VALUES (?, ?, ?, ?, ?)', [name, gmail, gmail, studentId, phone || null]);
+        const { data: insertResult, error } = await supabase.from('students').insert([
+            { name, email: gmail, gmail, studentId, phone: phone || null }
+        ]).select();
+
+        if (error) throw error;
         
         req.session.studentId = studentId;
         req.session.studentName = name;
@@ -81,34 +85,33 @@ router.post('/register', async (req, res) => {
         const student = { name, gmail, studentId, phone };
         sendStudentRegistrationEmail(student);
 
-        res.status(201).json({ message: 'Registration successful', student: { id: insertResult.insertId, name, gmail, studentId, phone } });
+        res.status(201).json({ message: 'Registration successful', student: insertResult[0] });
     } catch (error) {
         console.error('Error registering student:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// Login a student - supports both studentId and gmail
+// Login a student — requires BOTH gmail AND studentId to match
 router.post('/login', async (req, res) => {
     const { studentId, gmail } = req.body;
 
-    if (!studentId && !gmail) {
-        return res.status(400).json({ error: 'Student ID or Gmail is required' });
+    if (!studentId || !gmail) {
+        return res.status(400).json({ error: 'Both Gmail and Student ID are required' });
     }
 
     try {
-        let student;
-        if (gmail) {
-            const [loginResult] = await db.execute('SELECT * FROM students WHERE gmail = ?', [gmail]);
-            student = loginResult[0];
-        } else {
-            const [loginResult] = await db.execute('SELECT * FROM students WHERE studentId = ?', [studentId]);
-            student = loginResult[0];
+        const { data: student, error } = await supabase
+            .from('students')
+            .select('*')
+            .eq('gmail', gmail)
+            .eq('studentId', studentId)
+            .single();
+
+        if (error || !student) {
+            return res.status(401).json({ error: 'Invalid login credentials. Please check your Gmail and Student ID.' });
         }
 
-        if (!student) {
-            return res.status(404).json({ error: 'Student not found' });
-        }
         req.session.studentId = student.studentId;
         req.session.studentName = student.name;
         req.session.studentGmail = student.gmail;
@@ -125,8 +128,9 @@ router.post('/login', async (req, res) => {
 // Get all registered students
 router.get('/', async (req, res) => {
     try {
-        const [result] = await db.execute('SELECT id, name, gmail, studentId, phone, createdAt FROM students ORDER BY createdAt DESC');
-        res.json(result);
+        const { data: result, error } = await supabase.from('students').select('id, name, gmail, studentId, phone, createdAt').order('createdAt', { ascending: false });
+        if (error) throw error;
+        res.json(result || []);
     } catch (error) {
         console.error('Error fetching students:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -157,4 +161,3 @@ router.get('/session', (req, res) => {
 
 return router;
 };
-

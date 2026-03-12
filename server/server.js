@@ -3,7 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const path = require('path');
-const mysql = require('mysql2');
+const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const http = require('http');
@@ -45,118 +45,26 @@ async function generateCertificates() {
     }
 }
 
-// MySQL database setup
-const db = mysql.createPool({
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME || 'complaint_db',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
+// Supabase database setup
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
-// In production, require DB_PASSWORD to be set (avoid hardcoded default)
-if (process.env.NODE_ENV === 'production' && !process.env.DB_PASSWORD) {
-    console.error('FATAL: DB_PASSWORD must be set in production');
+if (!supabaseUrl || !supabaseKey) {
+    console.error('FATAL: SUPABASE_URL and SUPABASE_KEY must be set in .env');
     process.exit(1);
 }
 
-// Use promise wrapper so we can use async/await with db.execute()
-const dbPromise = db.promise ? db.promise() : db;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Initialize routers after db is defined (use promise-wrapped pool)
-const studentsRouter = require('./routes/students')(dbPromise);
-const complaintsRouter = require('./routes/complaints')(dbPromise);
-const analyticsRouter = require('./routes/analytics')(dbPromise);
-const teachersRouter = require('./routes/teachers')(dbPromise);
+// Initialize routers (pass supabase client)
+const studentsRouter = require('./routes/students')(supabase);
+const complaintsRouter = require('./routes/complaints')(supabase);
+const analyticsRouter = require('./routes/analytics')(supabase);
+const teachersRouter = require('./routes/teachers')(supabase);
 
-// Initialize database after routers are set up
-initializeDatabase().catch(console.error);
+// Schema is managed via Supabase Dashboard / MCP Migrations
 
-// Initialize database tables
-async function initializeDatabase() {
-    try {
-        // Students table - updated for Gmail login
-        await new Promise((resolve, reject) => {
-            db.execute(`CREATE TABLE IF NOT EXISTS students (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                studentId VARCHAR(255) UNIQUE NOT NULL,
-                gmail VARCHAR(255) NOT NULL,
-                phone VARCHAR(50),
-                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )`, (err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
 
-// Teachers/Admins table - updated for Gmail login with specific IDs
-        await new Promise((resolve, reject) => {
-            db.execute(`CREATE TABLE IF NOT EXISTS teachers (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                gmail VARCHAR(255) UNIQUE NOT NULL,
-                teacherId VARCHAR(255) UNIQUE NOT NULL,
-                department VARCHAR(255),
-                password VARCHAR(255) NOT NULL,
-                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )`, (err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
-
-        // Complaints table
-        await new Promise((resolve, reject) => {
-            db.execute(`CREATE TABLE IF NOT EXISTS complaints (
-                id VARCHAR(255) PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                studentId VARCHAR(255) NOT NULL,
-                studentEmail VARCHAR(255) NOT NULL,
-                studentGmail VARCHAR(255) NOT NULL,
-                type VARCHAR(255) NOT NULL,
-                category VARCHAR(255) DEFAULT 'general',
-                description TEXT NOT NULL,
-                status VARCHAR(255) DEFAULT 'pending',
-                assignedTo VARCHAR(255),
-                resolvedBy VARCHAR(255),
-                resolvedAt TIMESTAMP NULL,
-                resolutionNotes TEXT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (studentId) REFERENCES students (studentId)
-            )`, (err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
-
-        // Complaint status history table - for tracking status changes
-        await new Promise((resolve, reject) => {
-            db.execute(`CREATE TABLE IF NOT EXISTS complaint_history (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                complaintId VARCHAR(255) NOT NULL,
-                status VARCHAR(255) NOT NULL,
-                changedBy VARCHAR(255),
-                notes TEXT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (complaintId) REFERENCES complaints (id)
-            )`, (err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
-
-        console.log('Database initialization completed successfully');
-    } catch (error) {
-        console.error('Database initialization failed:', error);
-        throw error;
-    }
-}
 
 // Security middleware
 const helmet = require('helmet');
@@ -168,10 +76,10 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
-            scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net", "https://cdn.tailwindcss.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdn.tailwindcss.com"],
             imgSrc: ["'self'", "data:", "https:"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com"],
         },
     },
 }));
@@ -351,8 +259,11 @@ app.post('/api/admin/register', async (req, res) => {
 
     try {
         // Check if username already exists
-        const [existingAdminRows] = await db.execute('SELECT id FROM admins WHERE username = ?', [username]);
-        const existingAdmin = existingAdminRows[0];
+        const { data: existingAdmin, error: fetchError } = await supabase
+            .from('admins')
+            .select('id')
+            .eq('username', username)
+            .single();
 
         if (existingAdmin) {
             // Log failed registration
@@ -362,8 +273,13 @@ app.post('/api/admin/register', async (req, res) => {
 
         // Hash password and insert new admin
         const hashedPassword = await bcrypt.hash(password, 10);
-        const [result] = await db.execute('INSERT INTO admins (username, password) VALUES (?, ?)', [username, hashedPassword]);
-        const adminId = result.insertId;
+        const { data: result, error: insertError } = await supabase
+            .from('admins')
+            .insert([{ username, password: hashedPassword }])
+            .select();
+
+        if (insertError) throw insertError;
+        const adminId = result[0].id;
 
         // Log successful registration
         await logAdminAction(timestamp, 'REGISTER', username, 'SUCCESS', `Admin ID: ${adminId}`);
@@ -387,10 +303,13 @@ app.post('/api/admin/login', async (req, res) => {
     }
 
     try {
-        const [adminRows] = await db.execute('SELECT * FROM admins WHERE username = ?', [username]);
-        const admin = adminRows[0];
+        const { data: admin, error } = await supabase
+            .from('admins')
+            .select('*')
+            .eq('username', username)
+            .single();
 
-        if (!admin) {
+        if (error || !admin) {
             // Log failed login attempt
             await logAdminAction(timestamp, 'LOGIN_FAILED', username, 'FAILED', 'Admin not found');
             return res.status(401).json({ error: 'Invalid credentials' });

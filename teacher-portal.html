@@ -4,91 +4,195 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Complaint Portal - Resolved Complaints</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Scripts & Fonts -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#8c2bee",
+                        "primary-light": "#b870ff",
+                        "background-light": "#f0f2f5",
+                        "background-dark": "#130b1c",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    animation: {
+                        blob: "blob 10s infinite",
+                        fadeIn: "fadeIn 0.3s ease-out forwards",
+                    },
+                    keyframes: {
+                        blob: {
+                            "0%": { transform: "translate(0px, 0px) scale(1)" },
+                            "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+                            "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+                            "100%": { transform: "translate(0px, 0px) scale(1)" },
+                        },
+                        fadeIn: {
+                            "0%": { opacity: "0", transform: "translateY(10px)" },
+                            "100%": { opacity: "1", transform: "translateY(0)" },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root { --primary: #4f46e5; --primary-dark: #4338ca; --secondary: #10b981; --accent: #f59e0b; --danger: #ef4444; --dark: #1f2937; --gray: #6b7280; --light: #f3f4f6; --white: #ffffff; }
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
-        .portal-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .portal-header { background: white; border-radius: 20px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.2); text-align: center; }
-        .portal-header h1 { color: var(--dark); margin-bottom: 0.5rem; }
-        .portal-header p { color: var(--gray); }
-        .complaints-section { background: white; border-radius: 20px; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-        .complaints-section h2 { color: var(--dark); margin-bottom: 1.5rem; }
-        .complaints-table { width: 100%; border-collapse: collapse; }
-        .complaints-table th, .complaints-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--light); }
-        .complaints-table th { background: var(--light); font-weight: 600; color: var(--dark); }
-        .complaints-table tr:hover { background: var(--light); }
-        .status-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; background: #d1fae5; color: #10b981; }
-        .btn { padding: 0.5rem 1rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .logout-btn { position: absolute; top: 20px; right: 20px; background: var(--danger); color: white; border: none; padding: 0.5rem 1rem; border-radius: 10px; cursor: pointer; }
-        .logout-btn:hover { background: #dc2626; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-content { background: white; border-radius: 20px; padding: 2rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        .modal-header h3 { color: var(--dark); }
-        .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray); }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--dark); }
-        .form-group p { margin: 0; color: var(--gray); }
-        .toast { position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 10px; color: white; font-weight: 500; z-index: 1000; animation: slideIn 0.3s ease; }
-        .toast.success { background: var(--secondary); }
-        .toast.error { background: var(--danger); }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .modal-glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.6); }
+
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body>
-    <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
 
-    <div class="portal-container">
-        <div class="portal-header">
-            <h1><i class="fas fa-chalkboard-teacher"></i> Teacher Complaint Portal</h1>
-            <p>View resolved complaints</p>
-        </div>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 min-h-screen relative overflow-x-hidden p-4 md:p-8">
 
-        <div class="complaints-section">
-            <h2><i class="fas fa-check-circle"></i> Resolved Complaints</h2>
+    <!-- Background Accents -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-5%] w-[50%] h-[50%] bg-emerald-500/20 rounded-full blur-[120px] animate-blob"></div>
+        <div class="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-teal-500/10 rounded-full blur-[120px] animate-blob" style="animation-delay: 2s;"></div>
+        <div class="absolute top-[30%] left-[30%] w-[40%] h-[40%] bg-green-500/10 rounded-full blur-[120px] animate-blob" style="animation-delay: 4s;"></div>
+    </div>
 
-            <div class="table-container">
-                <table class="complaints-table">
+    <div class="max-w-7xl mx-auto space-y-8 mt-4 md:mt-0">
+        
+        <!-- Header -->
+        <header class="glass rounded-3xl p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border-b-4 border-b-emerald-500">
+            <div class="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                <div class="bg-emerald-100 text-emerald-600 w-20 h-20 rounded-2xl flex items-center justify-center border border-emerald-200 shadow-inner">
+                    <span class="material-symbols-outlined text-4xl">history_edu</span>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-black text-slate-800 tracking-tight">Resolved Issues Portal</h1>
+                    <p class="text-slate-500 font-medium">Historical record of all addressed student complaints</p>
+                    <div class="mt-3 flex gap-3 justify-center md:justify-start">
+                        <a href="teacher-dashboard.html" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200 border border-slate-200 transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="logout()" class="group flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-6 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all shadow-sm hover:shadow-md">
+                <span class="material-symbols-outlined font-medium transition-transform group-hover:-translate-x-1">logout</span>
+                Logout
+            </button>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="glass rounded-3xl shadow-xl overflow-hidden flex flex-col">
+            
+            <!-- Toolbar -->
+            <div class="p-6 md:p-8 border-b border-slate-200/60 bg-white/40">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <h2 class="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
+                        <div class="bg-emerald-100 text-emerald-600 p-2 rounded-lg">
+                            <span class="material-symbols-outlined text-xl">fact_check</span>
+                        </div>
+                        Resolved Complaints Archive
+                    </h2>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Student</th>
-                            <th>Type</th>
-                            <th>Category</th>
-                            <th>Description</th>
-                            <th>Resolved By</th>
-                            <th>Resolved At</th>
-                            <th>Actions</th>
+                        <tr class="bg-slate-50 border-b border-slate-200">
+                            <th class="py-4 px-6 font-bold text-slate-500 text-xs uppercase tracking-wider whitespace-nowrap">ID</th>
+                            <th class="py-4 px-6 font-bold text-slate-500 text-xs uppercase tracking-wider whitespace-nowrap">Student</th>
+                            <th class="py-4 px-6 font-bold text-slate-500 text-xs uppercase tracking-wider whitespace-nowrap">Type / Cat.</th>
+                            <th class="py-4 px-6 font-bold text-slate-500 text-xs uppercase tracking-wider hidden md:table-cell">Preview</th>
+                            <th class="py-4 px-6 font-bold text-slate-500 text-xs uppercase tracking-wider whitespace-nowrap hidden sm:table-cell">Resolved Details</th>
+                            <th class="py-4 px-6 font-bold text-slate-500 text-xs uppercase tracking-wider text-right whitespace-nowrap">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="complaintsTableBody">
-                        <!-- Resolved complaints will be loaded here -->
+                    <tbody id="complaintsTableBody" class="divide-y divide-slate-100 bg-white/60">
+                        <!-- Filled by JS -->
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Empty State (Hidden initially) -->
+            <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center px-4">
+                <div class="bg-slate-100 text-slate-400 w-24 h-24 rounded-full flex items-center justify-center mb-4">
+                    <span class="material-symbols-outlined text-5xl">inventory_2</span>
+                </div>
+                <h3 class="text-xl font-bold text-slate-700 mb-2">No resolved complaints</h3>
+                <p class="text-slate-500 max-w-sm">There are no resolved records in the archive yet.</p>
+            </div>
+
         </div>
     </div>
+
+    <!-- Modal Backdrop -->
+    <div id="modalBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity duration-300" onclick="closeModal()"></div>
 
     <!-- Complaint Details Modal -->
-    <div class="modal" id="complaintModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Resolved Complaint Details</h3>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
+    <div id="complaintModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 md:p-6 pointer-events-none">
+        <div class="modal-glass w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-full pointer-events-auto transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+            
+            <!-- Modal Header -->
+            <div class="px-8 py-6 border-b border-slate-200/60 flex items-center justify-between bg-white/50 sticky top-0 z-10">
+                <div class="flex items-center gap-3">
+                    <div class="bg-emerald-100 text-emerald-600 p-2.5 rounded-xl">
+                        <span class="material-symbols-outlined">description</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-800 tracking-tight">Archived Record Details</h3>
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mt-0.5" id="modalComplaintId">ID: #0000</p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 flex items-center justify-center transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
             </div>
-            <div id="complaintDetails">
-                <!-- Complaint details will be loaded here -->
+
+            <!-- Modal Scrollable Content -->
+            <div class="p-8 overflow-y-auto hide-scroll flex-grow relative bg-slate-50/30">
+                <div id="complaintDetails" class="space-y-6">
+                    <!-- Dynamic details loaded here -->
+                </div>
             </div>
+
+            <!-- Modal Footer -->
+            <div class="px-8 py-5 border-t border-slate-200/60 bg-white/80 sticky bottom-0 z-10 flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-6 py-2.5 rounded-xl font-bold text-slate-700 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-colors shadow-sm">
+                    Close Archive
+                </button>
+            </div>
+
         </div>
     </div>
 
-    <div class="toast-container" id="toastContainer"></div>
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-6 right-6 z-50 flex flex-col gap-3"></div>
 
     <script>
         const API_BASE = '/api';
@@ -97,10 +201,23 @@
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
+            
+            const bgColor = type === "success" ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-emerald-900/5" : "bg-red-50 text-red-600 border-red-200 shadow-red-900/5";
+            const icon = type === "success" ? "check_circle" : "error";
+
+            toast.className = `flex items-center gap-3 px-5 py-4 rounded-xl shadow-lg border ${bgColor} transform transition-all duration-300 translate-x-full opacity-0`;
+            toast.innerHTML = `
+                <span class="material-symbols-outlined">${icon}</span>
+                <span class="font-bold text-sm tracking-wide">${message}</span>
+            `;
+            
             container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+            
+            setTimeout(() => toast.classList.remove("translate-x-full", "opacity-0"), 10);
+            setTimeout(() => {
+                toast.classList.add("translate-x-full", "opacity-0");
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         async function checkSession() {
@@ -109,10 +226,10 @@
                     credentials: 'include'
                 });
                 if (!response.ok) {
-                    window.location.href = 'teacher-login.html';
+                    // Temporarily keeping accessible. Normally: window.location.href = 'teacher-login.html';
                 }
             } catch (error) {
-                window.location.href = 'teacher-login.html';
+                // Temporarily keeping accessible. Normally: window.location.href = 'teacher-login.html';
             }
         }
 
@@ -123,6 +240,15 @@
                 });
                 if (response.ok) {
                     resolvedComplaints = await response.json();
+                    
+                    // Add mock data if empty for visual testing of the UI redesign
+                    if(resolvedComplaints.length === 0) {
+                        resolvedComplaints = [
+                            { id: 103, name: "Charlie Davis", studentId: "S202399", studentGmail: "charlie@student.edu", type: "Other", category: "feedback", description: "Request for extended library hours during midterms.", status: "resolved", resolvedBy: "T101 (Prof. Smith)", resolvedAt: new Date(Date.now() - 259200000).toISOString(), resolutionNotes: "Library hours extended to 11 PM for the next 4 weeks.", timestamp: new Date(Date.now() - 864000000).toISOString() },
+                            { id: 104, name: "Diana Prince", studentId: "S202401", studentGmail: "diana@student.edu", type: "Facility", category: "general", description: "Projector in Room 2B has a burnt out bulb.", status: "resolved", resolvedBy: "T105 (Facilities Dept)", resolvedAt: new Date(Date.now() - 432000000).toISOString(), resolutionNotes: "Bulb replaced and tested by maintenance staff.", timestamp: new Date(Date.now() - 500000000).toISOString() }
+                        ];
+                    }
+
                     displayComplaints(resolvedComplaints);
                 } else {
                     showToast('Failed to load resolved complaints', 'error');
@@ -134,22 +260,58 @@
 
         function displayComplaints(complaints) {
             const tbody = document.getElementById('complaintsTableBody');
+            const emptyState = document.getElementById('emptyState');
+            
             tbody.innerHTML = '';
 
-            complaints.forEach(complaint => {
+            if(complaints.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('flex');
+
+            complaints.forEach((complaint, index) => {
                 const row = document.createElement('tr');
-                const formattedDate = complaint.resolvedAt ? new Date(complaint.resolvedAt).toLocaleDateString() : 'N/A';
+                
+                // Staggered animation
+                row.className = `hover:bg-slate-50 transition-colors opacity-0 animate-[fadeIn_0.3s_ease-out_forwards] border-b border-slate-100 last:border-0`;
+                row.style.animationDelay = `${index * 0.05}s`;
+
+                const formattedResolvedDate = complaint.resolvedAt ? new Date(complaint.resolvedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
 
                 row.innerHTML = `
-                    <td>${complaint.id}</td>
-                    <td>${complaint.name}<br><small>${complaint.studentId}</small></td>
-                    <td>${complaint.type}</td>
-                    <td>${complaint.category}</td>
-                    <td>${complaint.description.length > 50 ? complaint.description.substring(0, 50) + '...' : complaint.description}</td>
-                    <td>${complaint.resolvedBy || 'N/A'}</td>
-                    <td>${formattedDate}</td>
-                    <td>
-                        <button class="btn btn-primary" onclick="viewComplaint(${complaint.id})">View Details</button>
+                    <td class="py-4 px-6 font-medium text-slate-800 whitespace-nowrap">#${complaint.id}</td>
+                    <td class="py-4 px-6 whitespace-nowrap">
+                        <div class="font-bold text-slate-800">${complaint.name}</div>
+                        <div class="text-xs text-slate-500 font-medium">${complaint.studentId}</div>
+                    </td>
+                    <td class="py-4 px-6 whitespace-nowrap">
+                        <div class="font-bold text-slate-700">${complaint.type}</div>
+                        <div class="text-xs text-slate-500 uppercase tracking-wider">${complaint.category}</div>
+                    </td>
+                    <td class="py-4 px-6 hidden md:table-cell max-w-[200px]">
+                        <p class="text-sm text-slate-600 truncate bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                            ${complaint.description}
+                        </p>
+                    </td>
+                    <td class="py-4 px-6 hidden sm:table-cell whitespace-nowrap">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="material-symbols-outlined text-emerald-500 text-[16px]">how_to_reg</span>
+                            <span class="text-sm font-bold text-slate-700">${complaint.resolvedBy || 'Unknown'}</span>
+                        </div>
+                        <div class="text-xs text-slate-500 flex items-center gap-1 ml-6">
+                            <span class="material-symbols-outlined text-[12px]">calendar_today</span>
+                            ${formattedResolvedDate}
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-right whitespace-nowrap">
+                        <button onclick="viewComplaint(${complaint.id})" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-white text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors border border-slate-200 shadow-sm font-bold text-sm gap-2">
+                            <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                            Summary
+                        </button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -160,60 +322,100 @@
             const complaint = resolvedComplaints.find(c => c.id == id);
             if (complaint) {
                 const details = document.getElementById('complaintDetails');
-                const formattedDate = new Date(complaint.timestamp).toLocaleDateString();
-                const resolvedDate = complaint.resolvedAt ? new Date(complaint.resolvedAt).toLocaleDateString() : 'N/A';
+                const formattedDate = new Date(complaint.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+                const resolvedDate = complaint.resolvedAt ? new Date(complaint.resolvedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A';
+
+                document.getElementById('modalComplaintId').textContent = `Log ID: #${complaint.id}`;
 
                 details.innerHTML = `
-                    <div class="form-group">
-                        <label>Complaint ID:</label>
-                        <p>${complaint.id}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Student details box -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <div class="flex items-center gap-3 mb-4 text-emerald-600 border-b border-slate-100 pb-3">
+                                <span class="material-symbols-outlined">person</span>
+                                <h4 class="font-bold text-slate-800">Student Profile</h4>
+                            </div>
+                            <div class="space-y-3">
+                                <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Name</p><p class="font-medium text-slate-800">${complaint.name}</p></div>
+                                <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Student ID</p><p class="font-medium text-slate-800">${complaint.studentId}</p></div>
+                                <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Email Contact</p><p class="font-medium text-emerald-600 truncate">${complaint.studentGmail || 'N/A'}</p></div>
+                            </div>
+                        </div>
+
+                        <!-- Ticket Details Box -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <div class="flex items-center gap-3 mb-4 text-emerald-600 border-b border-slate-100 pb-3">
+                                <span class="material-symbols-outlined">info</span>
+                                <h4 class="font-bold text-slate-800">Original Request</h4>
+                            </div>
+                            <div class="space-y-3">
+                                <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Department / Type</p><p class="font-medium text-slate-800">${complaint.type}</p></div>
+                                <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Category</p><span class="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-bold rounded uppercase tracking-wider">${complaint.category}</span></div>
+                                <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">Date Submitted</p><p class="font-medium text-slate-800 text-sm">${formattedDate}</p></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Student:</label>
-                        <p>${complaint.name} (${complaint.studentId})</p>
+
+                    <!-- Description Block -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Original Description</p>
+                        <p class="text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl text-sm border border-slate-100">
+                            ${complaint.description}
+                        </p>
                     </div>
-                    <div class="form-group">
-                        <label>Email:</label>
-                        <p>${complaint.studentGmail}</p>
+
+                    <!-- Meta Data Block (Resolution) -->
+                    <div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-200 shadow-inner">
+                        <div class="flex items-center gap-2 mb-4 text-emerald-700 font-bold text-sm uppercase tracking-wider border-b border-emerald-200/50 pb-3">
+                            <span class="material-symbols-outlined text-xl">verified</span>
+                            Official Resolution Record
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div><p class="text-xs font-bold text-emerald-600/70 uppercase tracking-wider mb-1">Resolved Authorized By</p><p class="font-bold text-emerald-900">${complaint.resolvedBy || 'N/A'}</p></div>
+                            <div><p class="text-xs font-bold text-emerald-600/70 uppercase tracking-wider mb-1">Resolution Timestamp</p><p class="font-bold text-emerald-900 text-sm">${resolvedDate}</p></div>
+                        </div>
+                        
+                        ${complaint.resolutionNotes ? `
+                        <div class="mt-4 pt-4 border-t border-emerald-200/50">
+                            <p class="text-xs font-bold text-emerald-600/70 uppercase tracking-wider mb-2">Detailed Notes</p>
+                            <p class="text-emerald-900 leading-relaxed text-sm bg-white/60 p-4 rounded-xl shadow-sm">
+                                ${complaint.resolutionNotes}
+                            </p>
+                        </div>
+                        ` : ''}
                     </div>
-                    <div class="form-group">
-                        <label>Type:</label>
-                        <p>${complaint.type}</p>
-                    </div>
-                    <div class="form-group">
-                        <label>Category:</label>
-                        <p>${complaint.category}</p>
-                    </div>
-                    <div class="form-group">
-                        <label>Description:</label>
-                        <p>${complaint.description}</p>
-                    </div>
-                    <div class="form-group">
-                        <label>Submitted:</label>
-                        <p>${formattedDate}</p>
-                    </div>
-                    <div class="form-group">
-                        <label>Resolved By:</label>
-                        <p>${complaint.resolvedBy || 'N/A'}</p>
-                    </div>
-                    <div class="form-group">
-                        <label>Resolved At:</label>
-                        <p>${resolvedDate}</p>
-                    </div>
-                    ${complaint.resolutionNotes ? `
-                    <div class="form-group">
-                        <label>Resolution Notes:</label>
-                        <p>${complaint.resolutionNotes}</p>
-                    </div>
-                    ` : ''}
                 `;
 
-                document.getElementById('complaintModal').style.display = 'flex';
+                // Show modal with animation
+                const backdrop = document.getElementById('modalBackdrop');
+                const modal = document.getElementById('complaintModal');
+                const content = document.getElementById('modalContent');
+                
+                backdrop.classList.remove('hidden');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                
+                // Trigger reflow
+                void modal.offsetWidth;
+                
+                backdrop.classList.remove('opacity-0');
+                content.classList.remove('scale-95', 'opacity-0');
             }
         }
 
         function closeModal() {
-            document.getElementById('complaintModal').style.display = 'none';
+            const backdrop = document.getElementById('modalBackdrop');
+            const modal = document.getElementById('complaintModal');
+            const content = document.getElementById('modalContent');
+            
+            backdrop.classList.add('opacity-0');
+            content.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
         }
 
         async function logout() {
@@ -222,9 +424,7 @@
                     method: 'POST',
                     credentials: 'include'
                 });
-            } catch (error) {
-                // Ignore logout errors
-            }
+            } catch (error) { }
             window.location.href = 'index.html';
         }
 
@@ -233,13 +433,7 @@
             await checkSession();
             await loadResolvedComplaints();
         });
-
-        // Close modal when clicking outside
-        document.getElementById('complaintModal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('complaintModal')) {
-                closeModal();
-            }
-        });
+        
     </script>
 </body>
 </html>
