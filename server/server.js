@@ -141,6 +141,16 @@ app.use(cors({
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'UP', 
+        supabase: !!supabase,
+        env: process.env.NODE_ENV,
+        vercel: !!process.env.VERCEL
+    });
+});
+
 // Global device tracking
 const deviceTracker = new Map();
 
