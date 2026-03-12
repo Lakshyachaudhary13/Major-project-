@@ -12,6 +12,12 @@ const crypto = require('crypto');
 // selfsigned is lazy-loaded inside generateCertificates() to avoid crashes in serverless environments
 require('dotenv').config();
 
+const studentsRouter = require('./routes/students');
+const complaintsRouter = require('./routes/complaints');
+const analyticsRouter = require('./routes/analytics');
+const teachersRouter = require('./routes/teachers');
+
+
 const app = express();
 const PORT = process.env.PORT || 8080;
 const USE_HTTPS = process.env.USE_HTTPS === 'true'; // Set to 'true' in .env to enable HTTPS
