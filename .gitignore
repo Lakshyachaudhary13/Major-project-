@@ -8,3 +8,5 @@ password and gmail.txt
 __tests__/__snapshots__/
 coverage/
 .nyc_output/
+.vercel
+.env*.local
