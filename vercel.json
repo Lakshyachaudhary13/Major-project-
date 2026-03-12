@@ -2,7 +2,6 @@
   "version": 2,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.js" },
-    { "source": "/", "destination": "/student-dashboard.html" }
+    { "source": "/api/(.*)", "destination": "/api/index.js" }
   ]
 }
