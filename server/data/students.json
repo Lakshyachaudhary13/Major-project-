@@ -8,5 +8,15 @@
     "phone": null,
     "password": "$2a$10$NjO0ZipnS.tIK.QPwboVHexADcfjqt.vSDrpWu5KPLThVKvpoUAj2",
     "createdAt": "2026-03-12T10:51:04.127Z"
+  },
+  {
+    "id": "1773322472308",
+    "name": "John",
+    "email": "joh@gmail.com",
+    "gmail": "joh@gmail.com",
+    "studentId": "LASS003",
+    "phone": null,
+    "password": "$2a$10$POx7n5GK8yaqZItQxIdrEeYxRUxx93HzCAGRm5UwFWdtS1PD9euwC",
+    "createdAt": "2026-03-12T13:34:32.308Z"
   }
 ]

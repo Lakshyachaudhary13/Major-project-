@@ -78,10 +78,6 @@ if (supabase) {
 }
 
 // Initialize routers (Supabase mode)
-const studentsRouter = require('./routes/students')(supabase);
-const teachersRouter = require('./routes/teachers')(supabase);
-const complaintsRouter = require('./routes/complaints')(supabase);
-const analyticsRouter = require('./routes/analytics')(supabase);
 
 // Schema is managed via Supabase Dashboard / MCP Migrations
 
