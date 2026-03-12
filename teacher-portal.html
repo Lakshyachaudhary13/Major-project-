@@ -83,20 +83,21 @@
         
         <!-- Header -->
         <header class="glass rounded-3xl p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border-b-4 border-b-emerald-500">
-            <div class="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+            <a href="index.html" class="flex flex-col md:flex-row items-center gap-6 text-center md:text-left group">
                 <div class="bg-emerald-100 text-emerald-600 w-20 h-20 rounded-2xl flex items-center justify-center border border-emerald-200 shadow-inner">
                     <span class="material-symbols-outlined text-4xl">history_edu</span>
                 </div>
                 <div>
                     <h1 class="text-3xl font-black text-slate-800 tracking-tight">Resolved Issues Portal</h1>
                     <p class="text-slate-500 font-medium">Historical record of all addressed student complaints</p>
-                    <div class="mt-3 flex gap-3 justify-center md:justify-start">
-                        <a href="teacher-dashboard.html" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200 border border-slate-200 transition-colors shadow-sm">
-                            <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-                            Back to Dashboard
-                        </a>
-                    </div>
                 </div>
+            </a>
+            
+            <div class="mt-3 flex gap-3 justify-center md:justify-start">
+                <a href="teacher-dashboard.html" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200 border border-slate-200 transition-colors shadow-sm">
+                    <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                    Back to Dashboard
+                </a>
             </div>
             
             <button onclick="logout()" class="group flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-6 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all shadow-sm hover:shadow-md">
@@ -241,13 +242,6 @@
                 if (response.ok) {
                     resolvedComplaints = await response.json();
                     
-                    // Add mock data if empty for visual testing of the UI redesign
-                    if(resolvedComplaints.length === 0) {
-                        resolvedComplaints = [
-                            { id: 103, name: "Charlie Davis", studentId: "S202399", studentGmail: "charlie@student.edu", type: "Other", category: "feedback", description: "Request for extended library hours during midterms.", status: "resolved", resolvedBy: "T101 (Prof. Smith)", resolvedAt: new Date(Date.now() - 259200000).toISOString(), resolutionNotes: "Library hours extended to 11 PM for the next 4 weeks.", timestamp: new Date(Date.now() - 864000000).toISOString() },
-                            { id: 104, name: "Diana Prince", studentId: "S202401", studentGmail: "diana@student.edu", type: "Facility", category: "general", description: "Projector in Room 2B has a burnt out bulb.", status: "resolved", resolvedBy: "T105 (Facilities Dept)", resolvedAt: new Date(Date.now() - 432000000).toISOString(), resolutionNotes: "Bulb replaced and tested by maintenance staff.", timestamp: new Date(Date.now() - 500000000).toISOString() }
-                        ];
-                    }
 
                     displayComplaints(resolvedComplaints);
                 } else {
@@ -418,13 +412,8 @@
             }, 300);
         }
 
-        async function logout() {
-            try {
-                await fetch(`${API_BASE}/teachers/logout`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-            } catch (error) { }
+        function logout() {
+            fetch(`${API_BASE}/teachers/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
             window.location.href = 'index.html';
         }
 
