@@ -9,7 +9,7 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
-const selfsigned = require('selfsigned');
+// selfsigned is lazy-loaded inside generateCertificates() to avoid crashes in serverless environments
 require('dotenv').config();
 
 const app = express();
@@ -30,6 +30,7 @@ async function generateCertificates() {
         console.log('[CERT] Generating self-signed certificates...');
         const attrs = [{ name: 'commonName', value: 'localhost' }];
         try {
+            const selfsigned = require('selfsigned'); // lazy-load: only used locally
             const pems = await selfsigned.generate(attrs, { days: 365 });
             console.log('[CERT] Generated certificate data, writing files...');
             fs.writeFileSync(keyPath, pems.private);
@@ -50,8 +51,8 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-    console.error('FATAL: SUPABASE_URL and SUPABASE_KEY must be set in .env');
-    process.exit(1);
+    console.error('WARNING: SUPABASE_URL and SUPABASE_KEY are not set. API calls will fail.');
+    // Do not process.exit() — serverless environments (Vercel) set env vars via dashboard
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
