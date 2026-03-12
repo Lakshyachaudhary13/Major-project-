@@ -264,10 +264,10 @@ app.use(session({
 app.use(express.static(path.join(__dirname, '..')));
 
 // API routes
-app.use('/api/students', studentsRouter);
-app.use('/api/complaints', complaintsRouter);
-app.use('/api/analytics', analyticsRouter);
-app.use('/api/teachers', teachersRouter);
+app.use('/api/students', studentsRouter());
+app.use('/api/complaints', complaintsRouter(supabase));
+app.use('/api/analytics', analyticsRouter(supabase));
+app.use('/api/teachers', teachersRouter());
 
 // Function to log admin actions
 async function logAdminAction(timestamp, action, username, status, details) {
