@@ -1,24 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs').promises;
-const path = require('path');
 const bcrypt = require('bcryptjs');
 
-module.exports = () => {
-
-  // JSON utils
-  async function readJSON(filePath) {
-    try {
-      const data = await fs.readFile(filePath, 'utf8');
-      return JSON.parse(data);
-    } catch {
-      return [];
-    }
-  }
-
-  async function writeJSON(filePath, data) {
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
-  }
+module.exports = (supabase) => {
 
   // Register a new student
   router.post('/register', async (req, res) => {
@@ -33,14 +17,25 @@ module.exports = () => {
     }
 
     try {
-      const studentsFile = path.join(__dirname, '../data/students.json');
-      const students = await readJSON(studentsFile);
+      // Check if student ID already exists in Supabase
+      const { data: existingId, error: idError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('studentId', studentId)
+        .single();
 
-      if (students.find(s => s.studentId === studentId)) {
+      if (existingId) {
         return res.status(400).json({ error: 'Student ID already registered' });
       }
 
-      if (students.find(s => s.gmail === gmail)) {
+      // Check if gmail already exists in Supabase
+      const { data: existingGmail, error: gmailError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('gmail', gmail)
+        .single();
+
+      if (existingGmail) {
         return res.status(400).json({ error: 'Gmail already registered' });
       }
 
@@ -48,9 +43,7 @@ module.exports = () => {
       const hashedPassword = await bcrypt.hash(effectivePassword, 10);
 
       const newStudent = {
-        id: Date.now().toString(),
         name,
-        email: gmail,
         gmail,
         studentId,
         phone: phone || null,
@@ -58,15 +51,19 @@ module.exports = () => {
         createdAt: new Date().toISOString()
       };
 
-      students.push(newStudent);
-      await writeJSON(studentsFile, students);
+      const { data: result, error: insertError } = await supabase
+        .from('students')
+        .insert([newStudent])
+        .select();
+
+      if (insertError) throw insertError;
 
       req.session.studentId = studentId;
       req.session.studentName = name;
       req.session.studentGmail = gmail;
       req.session.studentPhone = phone;
 
-      res.status(201).json({ message: 'Registration successful', student: newStudent });
+      res.status(201).json({ message: 'Registration successful', student: result[0] });
     } catch (error) {
       console.error('Error registering student:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -82,11 +79,14 @@ module.exports = () => {
     }
 
     try {
-      const studentsFile = path.join(__dirname, '../data/students.json');
-      const students = await readJSON(studentsFile);
-      const student = students.find(s => s.gmail === gmail && s.studentId === studentId);
+      const { data: student, error } = await supabase
+        .from('students')
+        .select('*')
+        .eq('gmail', gmail)
+        .eq('studentId', studentId)
+        .single();
 
-      if (!student) {
+      if (error || !student) {
         return res.status(401).json({ error: 'Invalid login credentials. Please check your Gmail and Student ID.' });
       }
 
@@ -102,7 +102,13 @@ module.exports = () => {
       req.session.studentGmail = student.gmail;
       req.session.studentPhone = student.phone;
 
-      res.json({ message: 'Login successful', studentId: student.studentId, name: student.name, gmail: student.gmail, phone: student.phone });
+      res.json({ 
+        message: 'Login successful', 
+        studentId: student.studentId, 
+        name: student.name, 
+        gmail: student.gmail, 
+        phone: student.phone 
+      });
     } catch (error) {
       console.error('Error querying student:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -112,9 +118,14 @@ module.exports = () => {
   // Get all students (hide password)
   router.get('/', async (req, res) => {
     try {
-      const studentsFile = path.join(__dirname, '../data/students.json');
-      const students = await readJSON(studentsFile);
-      const result = students.map(({ password, ...s }) => s).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const { data: students, error } = await supabase
+        .from('students')
+        .select('*')
+        .order('createdAt', { ascending: false });
+
+      if (error) throw error;
+
+      const result = students.map(({ password, ...s }) => s);
       res.json(result);
     } catch (error) {
       console.error('Error fetching students:', error);
@@ -142,12 +153,8 @@ module.exports = () => {
     } else {
       res.status(401).json({ error: 'Not logged in' });
     }
-            studentPhone: req.session.studentPhone
-        });
-    } else {
-        res.status(401).json({ error: 'Not logged in' });
-    }
-});
+  });
 
-return router;
+  return router;
 };
+

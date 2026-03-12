@@ -1,24 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs').promises;
-const path = require('path');
 const bcrypt = require('bcryptjs');
 
-module.exports = () => {
-
-  // JSON utils
-  async function readJSON(filePath) {
-    try {
-      const data = await fs.readFile(filePath, 'utf8');
-      return JSON.parse(data);
-    } catch {
-      return [];
-    }
-  }
-
-  async function writeJSON(filePath, data) {
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
-  }
+module.exports = (supabase) => {
 
   // Register a new teacher
   router.post('/register', async (req, res) => {
@@ -33,21 +17,31 @@ module.exports = () => {
     }
 
     try {
-      const teachersFile = path.join(__dirname, '../data/teachers.json');
-      const teachers = await readJSON(teachersFile);
+      // Check if teacher ID already exists
+      const { data: existingId, error: idError } = await supabase
+        .from('teachers')
+        .select('id')
+        .eq('teacherId', teacherId)
+        .single();
 
-      if (teachers.find(t => t.teacherId === teacherId)) {
+      if (existingId) {
         return res.status(400).json({ error: 'Teacher ID already registered' });
       }
 
-      if (teachers.find(t => t.gmail === gmail)) {
+      // Check if gmail already exists
+      const { data: existingGmail, error: gmailError } = await supabase
+        .from('teachers')
+        .select('id')
+        .eq('gmail', gmail)
+        .single();
+
+      if (existingGmail) {
         return res.status(400).json({ error: 'Gmail already registered' });
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const newTeacher = {
-        id: Date.now().toString(),
         name,
         gmail,
         teacherId,
@@ -56,10 +50,14 @@ module.exports = () => {
         createdAt: new Date().toISOString()
       };
 
-      teachers.push(newTeacher);
-      await writeJSON(teachersFile, teachers);
+      const { data: result, error: insertError } = await supabase
+        .from('teachers')
+        .insert([newTeacher])
+        .select();
 
-      res.status(201).json({ message: 'Registration successful', teacher: newTeacher });
+      if (insertError) throw insertError;
+
+      res.status(201).json({ message: 'Registration successful', teacher: result[0] });
     } catch (error) {
       console.error('Error registering teacher:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -75,11 +73,14 @@ module.exports = () => {
     }
 
     try {
-      const teachersFile = path.join(__dirname, '../data/teachers.json');
-      const teachers = await readJSON(teachersFile);
-      const teacher = teachers.find(t => t.gmail === gmail && t.teacherId === teacherId);
+      const { data: teacher, error } = await supabase
+        .from('teachers')
+        .select('*')
+        .eq('gmail', gmail)
+        .eq('teacherId', teacherId)
+        .single();
 
-      if (!teacher) {
+      if (error || !teacher) {
         return res.status(404).json({ error: 'Teacher not found' });
       }
 
@@ -94,7 +95,13 @@ module.exports = () => {
       req.session.teacherGmail = teacher.gmail;
       req.session.teacherDepartment = teacher.department;
 
-      res.json({ message: 'Login successful', teacherId: teacher.teacherId, name: teacher.name, gmail: teacher.gmail, department: teacher.department });
+      res.json({ 
+        message: 'Login successful', 
+        teacherId: teacher.teacherId, 
+        name: teacher.name, 
+        gmail: teacher.gmail, 
+        department: teacher.department 
+      });
     } catch (error) {
       console.error('Error querying teacher:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -104,9 +111,14 @@ module.exports = () => {
   // Get all teachers (hide password)
   router.get('/', async (req, res) => {
     try {
-      const teachersFile = path.join(__dirname, '../data/teachers.json');
-      const teachers = await readJSON(teachersFile);
-      const result = teachers.map(({ password, ...t }) => t).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const { data: teachers, error } = await supabase
+        .from('teachers')
+        .select('*')
+        .order('createdAt', { ascending: false });
+
+      if (error) throw error;
+
+      const result = teachers.map(({ password, ...t }) => t);
       res.json(result);
     } catch (error) {
       console.error('Error fetching teachers:', error);
@@ -141,4 +153,5 @@ module.exports = () => {
 
   return router;
 };
+
 
