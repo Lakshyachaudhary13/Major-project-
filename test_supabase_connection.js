@@ -17,13 +17,21 @@ async function checkTables() {
     
     if (error) {
         console.log('Error found:');
-        console.log(JSON.stringify(error, null, 2));
+        console.error(error);
         
-        if (error.code === 'PGRST204' || error.code === 'PGRST205') {
-            console.log('\nPotential Cause: Tables are definitely missing or schema cache needs reload.');
+        if (error.code === 'PGRST205') {
+            console.log('\nPotential Cause: Table "students" not found in the "public" schema.');
         }
     } else {
         console.log('✅ Success! Data:', data);
+    }
+    
+    console.log('\nChecking "complaints" table...');
+    const result = await supabase.from('complaints').select('*').limit(1);
+    if (result.error) {
+        console.error('Complaints Error:', result.error.message);
+    } else {
+        console.log('✅ Complaints table is accessible!');
     }
 }
 

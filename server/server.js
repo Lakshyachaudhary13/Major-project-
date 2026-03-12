@@ -47,17 +47,35 @@ async function generateCertificates() {
 }
 
 // Supabase database setup
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
+const supabaseKey = (process.env.SUPABASE_KEY || '').trim();
 
 if (!supabaseUrl || !supabaseKey) {
-    console.error('WARNING: SUPABASE_URL and SUPABASE_KEY are not set. API calls will fail.');
-    // Do not process.exit() — serverless environments (Vercel) set env vars via dashboard
+    console.error('CRITICAL: SUPABASE_URL or SUPABASE_KEY is missing. Database operations will fail.');
 }
 
 const supabase = (supabaseUrl && supabaseKey)
-    ? createClient(supabaseUrl, supabaseKey)
+    ? createClient(supabaseUrl, supabaseKey, {
+        auth: {
+            persistSession: false
+        }
+    })
     : null;
+
+// Self-test database connection on startup
+if (supabase) {
+    supabase.from('students').select('*', { head: true, count: 'exact' })
+        .then(({ error }) => {
+            if (error) {
+                console.error('[SUPABASE] Connection Test Failed:', error.message);
+                if (error.code === 'PGRST205') {
+                    console.error('[SUPABASE] HINT: Tables not found. Reach out to the user to run repair-database.sql');
+                }
+            } else {
+                console.log('[SUPABASE] Connection Test Successful: Tables are accessible.');
+            }
+        });
+}
 
 // Initialize routers (Supabase mode)
 const studentsRouter = require('./routes/students')(supabase);
