@@ -10,8 +10,8 @@ module.exports = (supabase) => {
 router.post('/register', async (req, res) => {
     const { name, gmail, studentId, phone, password } = req.body;
 
-    if (!name || !gmail || !studentId || !password) {
-        return res.status(400).json({ error: 'Name, Gmail, student ID, and password are required' });
+    if (!name || !gmail || !studentId) {
+        return res.status(400).json({ error: 'Name, Gmail, and student ID are required' });
     }
 
     if (!gmail.endsWith('@gmail.com')) {
@@ -35,7 +35,8 @@ router.post('/register', async (req, res) => {
             }
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const effectivePassword = password || 'temp123';
+        const hashedPassword = await bcrypt.hash(effectivePassword, 10);
 
         const { data: result, error: insertError } = await supabase
             .from('students')
@@ -68,8 +69,8 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     const { studentId, gmail, password } = req.body;
 
-    if (!studentId || !gmail || !password) {
-        return res.status(400).json({ error: 'Gmail, Student ID, and Password are required' });
+    if (!studentId || !gmail) {
+        return res.status(400).json({ error: 'Gmail and Student ID are required' });
     }
 
     try {
@@ -84,9 +85,12 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid login credentials. Please check your Gmail and Student ID.' });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, student.password);
-        if (!isPasswordValid) {
-            return res.status(401).json({ error: 'Invalid password' });
+        // Only check password if it was provided in request
+        if (password) {
+            const isPasswordValid = await bcrypt.compare(password, student.password);
+            if (!isPasswordValid) {
+                return res.status(401).json({ error: 'Invalid password' });
+            }
         }
 
         req.session.studentId = student.studentId;
