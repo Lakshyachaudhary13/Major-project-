@@ -61,7 +61,11 @@ router.post('/register', async (req, res) => {
         res.status(201).json({ message: 'Registration successful', student: newStudent });
     } catch (error) {
         console.error('Error registering student:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ 
+            error: 'Database registration failed', 
+            details: error.message || error,
+            hint: 'Check Supabase table structure and RLS policies'
+        });
     }
 });
 

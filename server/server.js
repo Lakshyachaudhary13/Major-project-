@@ -122,13 +122,12 @@ app.use(cors({
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        if (process.env.NODE_ENV !== 'production') {
-            // In development, allow all origins
+        // In development OR if ALLOWED_ORIGINS is not set, allow all
+        if (process.env.NODE_ENV !== 'production' || !process.env.ALLOWED_ORIGINS) {
             return callback(null, true);
         }
         
-        // In production, check against whitelist
-        const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+        const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',');
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
@@ -199,8 +198,10 @@ app.use((req, res, next) => {
     next();
 });
 
-// Function to update phone file with current device status
 async function updatePhoneFile() {
+    // Disable file operations on Vercel
+    if (process.env.VERCEL) return;
+
     const fs = require('fs').promises;
     const phoneFilePath = path.join(__dirname, '..', 'phone');
 

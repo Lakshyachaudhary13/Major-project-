@@ -14,14 +14,9 @@
 - ✅ `TODO.md` → Updated status.
 
 ## Next Steps for User
-1. **Database Setup**: 
-   - Open [Supabase Dashboard](https://supabase.com/dashboard).
-   - Go to **SQL Editor**.
-   - Copy-paste the contents of `schema.sql` and run it.
-2. **Environment Variables**:
-   - Ensure `SUPABASE_URL` and `SUPABASE_KEY` are set in the [Vercel Dashboard](https://vercel.com/dashboard) project settings.
-3. **Deployment**:
-   - Push these changes to GitHub to trigger a redeploy.
+1. ✅ **Database Setup**: Schema and policies have been applied to project `iekceqmsujgfauafnuyx`.
+2. ✅ **Environment Variables**: `SUPABASE_URL` and `SUPABASE_KEY` have been updated on Vercel via CLI.
+3. ✅ **Deployment**: Latest push to `master` has been aliased and deployed to production.
 
 ## Run Locally
 ```bash

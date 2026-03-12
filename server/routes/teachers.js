@@ -54,9 +54,13 @@ module.exports = (supabase) => {
       res.status(201).json({ message: 'Registration successful', teacher: newTeacher });
     } catch (error) {
       console.error('Error registering teacher:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ 
+        error: 'Database registration failed', 
+        details: error.message || error,
+        hint: 'Check Supabase table structure and RLS policies'
+      });
     }
-  });
+});
 
   // Login a teacher
   router.post('/login', async (req, res) => {
