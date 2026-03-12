@@ -394,17 +394,8 @@
                 if (response.ok) {
                     allComplaints = await response.json();
                     
-                    // Add mock data if empty for visual testing of the UI redesign
-                    if(allComplaints.length === 0) {
-                        allComplaints = [
-                            { id: 101, name: "Alice Freeman", studentId: "S202301", studentGmail: "alice@student.edu", type: "Academic", category: "urgent", description: "Grade appeal for final exam requires immediate attention before term ends.", status: "pending", timestamp: new Date().toISOString() },
-                            { id: 102, name: "Bob Johnson", studentId: "S202345", studentGmail: "bob@student.edu", type: "Facility", category: "general", description: "AC unit in Room 4A is making excessive noise during lectures.", status: "in-progress", timestamp: new Date(Date.now() - 86400000).toISOString() },
-                            { id: 103, name: "Charlie Davis", studentId: "S202399", studentGmail: "charlie@student.edu", type: "Other", category: "feedback", description: "Request for extended library hours during midterms.", status: "resolved", resolvedBy: "T101", resolvedAt: new Date().toISOString(), resolutionNotes: "Library hours extended to 11 PM for the next 2 weeks.", timestamp: new Date(Date.now() - 259200000).toISOString() }
-                        ];
-                    }
-
                     updateStats();
-                    filterComplaints(); // Applies current filters and calls displayComplaints
+                    filterComplaints();
                 } else {
                     showToast('Failed to load complaints', 'error');
                 }
