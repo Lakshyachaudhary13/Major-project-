@@ -80,19 +80,19 @@
         
         <!-- Header -->
         <header class="glass rounded-3xl p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border-b-4 border-b-primary">
-            <div class="flex flex-col md:flex-row items-center gap-6 text-center md:text-left md:gap-8">
+            <a href="index.html" class="flex flex-col md:flex-row items-center gap-6 text-center md:text-left md:gap-8 group">
 
-                <div class="bg-primary/10 text-primary w-20 h-20 rounded-full flex items-center justify-center border border-primary/20 shadow-inner">
+                <div class="bg-primary/10 text-primary w-20 h-20 rounded-full flex items-center justify-center border border-primary/20 shadow-inner group-hover:scale-110 transition-transform">
                     <span class="material-symbols-outlined text-4xl">school</span>
                 </div>
                 <div>
-                    <h1 class="text-3xl font-black text-slate-800 tracking-tight">Student Dashboard</h1>
+                    <h1 class="text-3xl font-black text-slate-800 tracking-tight group-hover:text-primary transition-colors">Student Dashboard</h1>
                     <p class="text-slate-500 font-medium">Submit and track your institutional complaints</p>
                     <div id="studentIdDisplay" class="inline-flex items-center gap-2 mt-2 px-4 py-1.5 bg-primary/10 text-primary font-bold rounded-full text-sm">
                         <!-- Filled by JS -->
                     </div>
                 </div>
-            </div>
+            </a>
             
             <button onclick="logout()" class="group flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-6 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all shadow-sm hover:shadow-md">
                 <span class="material-symbols-outlined font-medium transition-transform group-hover:-translate-x-1">logout</span>
@@ -155,6 +155,7 @@
             </div>
 
             <!-- Complaints List Column -->
+            <div class="lg:col-span-7 flex flex-col h-full glass rounded-3xl p-8 shadow-xl min-h-[600px]">
                 <div class="flex items-center justify-between mb-8 pb-4 border-b border-slate-200/60">
                     <div class="flex items-center gap-3">
                         <div class="bg-indigo-100 text-indigo-600 p-2 rounded-lg">
@@ -376,12 +377,9 @@
         });
 
         function logout() {
-            fetch(`${API_BASE}/students/logout`, { method: 'POST', credentials: 'include' })
-                .catch(() => {})
-                .finally(() => {
-                localStorage.removeItem("loggedStudent");
-                window.location.href = "index.html";
-                });
+            localStorage.removeItem("loggedStudent");
+            fetch(`${API_BASE}/students/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+            window.location.href = "index.html";
         }
 
         // Initialize
