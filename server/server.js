@@ -55,7 +55,9 @@ if (!supabaseUrl || !supabaseKey) {
     // Do not process.exit() — serverless environments (Vercel) set env vars via dashboard
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = (supabaseUrl && supabaseKey)
+    ? createClient(supabaseUrl, supabaseKey)
+    : null;
 
 // Initialize routers (pass supabase client)
 const studentsRouter = require('./routes/students')(supabase);
