@@ -377,8 +377,8 @@
             fetch(`${API_BASE}/students/logout`, { method: 'POST', credentials: 'include' })
                 .catch(() => {})
                 .finally(() => {
-                    localStorage.removeItem("loggedStudent");
-                    window.location.href = "student.html";
+                localStorage.removeItem("loggedStudent");
+                window.location.href = "index.html";
                 });
         }
 

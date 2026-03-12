@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "1773312664126",
+    "name": "John",
+    "email": "john12@gmail.com",
+    "gmail": "john12@gmail.com",
+    "studentId": "LASS001",
+    "phone": null,
+    "password": "$2a$10$NjO0ZipnS.tIK.QPwboVHexADcfjqt.vSDrpWu5KPLThVKvpoUAj2",
+    "createdAt": "2026-03-12T10:51:04.127Z"
+  }
+]

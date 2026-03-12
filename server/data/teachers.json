@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1773313060118",
+    "name": "John",
+    "gmail": "john@gmail.com",
+    "teacherId": "john11`",
+    "department": "computer",
+    "password": "$2a$10$cPQyz3iroqfivx1apl6CNuGvO33utNhuEtimeTY3X06ampg0Hy22i",
+    "createdAt": "2026-03-12T10:57:40.119Z"
+  },
+  {
+    "id": "1773313142670",
+    "name": "John",
+    "gmail": "john12@gmail.com",
+    "teacherId": "JOHNT001",
+    "department": "computer",
+    "password": "$2a$10$43l7GJIXUUJFYsDyDKPtHeDE.LrN6I3lU2O.2O8Y0Uf07OwVXIFua",
+    "createdAt": "2026-03-12T10:59:02.670Z"
+  }
+]

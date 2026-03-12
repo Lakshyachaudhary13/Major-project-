@@ -1,58 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const nodemailer = require('nodemailer');
+const fs = require('fs').promises;
+const path = require('path');
+const bcrypt = require('bcryptjs');
 
 module.exports = (supabase) => {
 
-// Email configuration
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER || 'your-email@gmail.com',
-        pass: process.env.EMAIL_PASS || 'your-app-password'
-    }
-});
-
-// Send student registration confirmation email
-async function sendStudentRegistrationEmail(student) {
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: student.gmail,
-        subject: 'Welcome to Complaint Management System - Registration Successful',
-        html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #4f46e5;">Welcome, ${student.name}!</h2>
-                <p>Your student account has been created successfully.</p>
-                <div style="background: #f3f4f6; padding: 20px; border-radius: 10px; margin: 20px 0;">
-                    <p><strong>Name:</strong> ${student.name}</p>
-                    <p><strong>Student ID:</strong> ${student.studentId}</p>
-                    <p><strong>Email:</strong> ${student.gmail}</p>
-                    <p><strong>Phone:</strong> ${student.phone || 'Not provided'}</p>
-                </div>
-                <p>You can now login to submit complaints and track their status.</p>
-                <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-                    If you have any questions, please contact the administrator.
-                </p>
-            </div>
-        `
-    };
-
-    try {
-        await transporter.sendMail(mailOptions);
-        console.log('Student registration email sent successfully');
-    } catch (error) {
-        console.error('Error sending student registration email:', error);
-    }
-}
-
 // Register a new student
 router.post('/register', async (req, res) => {
-    const { name, gmail, studentId, phone } = req.body;
+    const { name, gmail, studentId, phone, password } = req.body;
 
-    if (!name || !gmail || !studentId) {
-        return res.status(400).json({ error: 'Name, Gmail, and student ID are required' });
+    if (!name || !gmail || !studentId || !password) {
+        return res.status(400).json({ error: 'Name, Gmail, student ID, and password are required' });
     }
 
     if (!gmail.endsWith('@gmail.com')) {
@@ -60,32 +19,45 @@ router.post('/register', async (req, res) => {
     }
 
     try {
-        const { data: existingRow } = await supabase.from('students').select('studentId').eq('studentId', studentId).single();
-        if (existingRow) {
-            return res.status(400).json({ error: 'Student ID already registered' });
+        // Check if studentId or gmail already exists
+        const { data: existingStudent, error: checkError } = await supabase
+            .from('students')
+            .select('studentId, gmail')
+            .or(`studentId.eq.${studentId},gmail.eq.${gmail}`)
+            .single();
+
+        if (existingStudent) {
+            if (existingStudent.studentId === studentId) {
+                return res.status(400).json({ error: 'Student ID already registered' });
+            }
+            if (existingStudent.gmail === gmail) {
+                return res.status(400).json({ error: 'Gmail already registered' });
+            }
         }
 
-        const { data: gmailRow } = await supabase.from('students').select('gmail').eq('gmail', gmail).single();
-        if (gmailRow) {
-            return res.status(400).json({ error: 'Gmail already registered' });
-        }
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        const { data: insertResult, error } = await supabase.from('students').insert([
-            { name, email: gmail, gmail, studentId, phone: phone || null }
-        ]).select();
+        const { data: result, error: insertError } = await supabase
+            .from('students')
+            .insert([{
+                name,
+                gmail,
+                studentId,
+                phone: phone || null,
+                password: hashedPassword
+            }])
+            .select();
 
-        if (error) throw error;
+        if (insertError) throw insertError;
+        
+        const newStudent = result[0];
         
         req.session.studentId = studentId;
         req.session.studentName = name;
         req.session.studentGmail = gmail;
         req.session.studentPhone = phone;
 
-        // Send registration confirmation email
-        const student = { name, gmail, studentId, phone };
-        sendStudentRegistrationEmail(student);
-
-        res.status(201).json({ message: 'Registration successful', student: insertResult[0] });
+        res.status(201).json({ message: 'Registration successful', student: newStudent });
     } catch (error) {
         console.error('Error registering student:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -94,10 +66,10 @@ router.post('/register', async (req, res) => {
 
 // Login a student — requires BOTH gmail AND studentId to match
 router.post('/login', async (req, res) => {
-    const { studentId, gmail } = req.body;
+    const { studentId, gmail, password } = req.body;
 
-    if (!studentId || !gmail) {
-        return res.status(400).json({ error: 'Both Gmail and Student ID are required' });
+    if (!studentId || !gmail || !password) {
+        return res.status(400).json({ error: 'Gmail, Student ID, and Password are required' });
     }
 
     try {
@@ -112,10 +84,14 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid login credentials. Please check your Gmail and Student ID.' });
         }
 
+        const isPasswordValid = await bcrypt.compare(password, student.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+
         req.session.studentId = student.studentId;
         req.session.studentName = student.name;
         req.session.studentGmail = student.gmail;
-        req.session.studentEmail = student.email;
         req.session.studentPhone = student.phone;
 
         res.json({ message: 'Login successful', studentId: student.studentId, name: student.name, gmail: student.gmail, phone: student.phone });
@@ -128,9 +104,15 @@ router.post('/login', async (req, res) => {
 // Get all registered students
 router.get('/', async (req, res) => {
     try {
-        const { data: result, error } = await supabase.from('students').select('id, name, gmail, studentId, phone, createdAt').order('createdAt', { ascending: false });
+        const { data: students, error } = await supabase
+            .from('students')
+            .select('*')
+            .order('createdAt', { ascending: false });
+
         if (error) throw error;
-        res.json(result || []);
+
+        const result = students.map(({ password, ...s }) => s);
+        res.json(result);
     } catch (error) {
         console.error('Error fetching students:', error);
         res.status(500).json({ error: 'Internal server error' });

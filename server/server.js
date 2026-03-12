@@ -59,11 +59,11 @@ const supabase = (supabaseUrl && supabaseKey)
     ? createClient(supabaseUrl, supabaseKey)
     : null;
 
-// Initialize routers (pass supabase client)
+// Initialize routers (Supabase mode)
 const studentsRouter = require('./routes/students')(supabase);
+const teachersRouter = require('./routes/teachers')(supabase);
 const complaintsRouter = require('./routes/complaints')(supabase);
 const analyticsRouter = require('./routes/analytics')(supabase);
-const teachersRouter = require('./routes/teachers')(supabase);
 
 // Schema is managed via Supabase Dashboard / MCP Migrations
 
