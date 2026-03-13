@@ -68,6 +68,19 @@ const supabase = (supabaseUrl && supabaseKey)
     })
     : null;
 
+// Middleware to check Supabase connection
+const checkSupabase = (req, res, next) => {
+    if (!supabase) {
+        return res.status(503).json({ 
+            error: 'Database connection not initialized. Please check backend environment variables.',
+            details: 'SUPABASE_URL or SUPABASE_KEY is missing.'
+        });
+    }
+    next();
+};
+
+app.use('/api', checkSupabase);
+
 // Self-test database connection on startup
 if (supabase) {
     supabase.from('students').select('*', { head: true, count: 'exact' })
@@ -150,6 +163,17 @@ app.get('/api/health', (req, res) => {
         supabase: !!supabase,
         env: process.env.NODE_ENV,
         vercel: !!process.env.VERCEL
+    });
+});
+
+// Debug environment variables (safe check)
+app.get('/api/debug-env', (req, res) => {
+    res.json({
+        hasUrl: !!process.env.SUPABASE_URL,
+        hasKey: !!process.env.SUPABASE_KEY,
+        urlLength: process.env.SUPABASE_URL ? process.env.SUPABASE_URL.length : 0,
+        vercel: !!process.env.VERCEL,
+        nodeEnv: process.env.NODE_ENV
     });
 });
 
@@ -403,10 +427,23 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'student-dashboard.html'));
 });
 
+// Catch-all 404 for API routes
+app.use('/api/*', (req, res) => {
+    res.status(404).json({ 
+        error: 'API endpoint not found',
+        path: req.originalUrl,
+        method: req.method
+    });
+});
+
 // Global error handler
 app.use((err, req, res, next) => {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Unhandled Error:', err);
+    res.status(err.status || 500).json({ 
+        error: err.message || 'Internal server error',
+        path: req.path,
+        method: req.method
+    });
 });
 
 // Get local IP address
