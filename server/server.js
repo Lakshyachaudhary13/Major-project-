@@ -284,14 +284,14 @@ app.use(session({
     }
 }));
 
-// Serve static files (frontend)
-app.use(express.static(path.join(__dirname, '..')));
-
 // API routes
 app.use('/api/students', studentsRouter(supabase));
 app.use('/api/complaints', complaintsRouter(supabase));
 app.use('/api/analytics', analyticsRouter(supabase));
 app.use('/api/teachers', teachersRouter(supabase));
+
+// Serve static files (frontend) - moved after API routes
+app.use(express.static(path.join(__dirname, '..')));
 
 // Function to log admin actions
 async function logAdminAction(timestamp, action, username, status, details) {
