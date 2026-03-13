@@ -166,6 +166,14 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Request logger for debugging Vercel routing
+app.use((req, res, next) => {
+    if (req.url.startsWith('/api')) {
+        console.log(`[API REQUEST] ${req.method} ${req.url} | Original: ${req.originalUrl}`);
+    }
+    next();
+});
+
 // Debug environment variables (safe check)
 app.get('/api/debug-env', (req, res) => {
     res.json({
@@ -285,10 +293,25 @@ app.use(session({
 }));
 
 // API routes
-app.use('/api/students', studentsRouter(supabase));
-app.use('/api/complaints', complaintsRouter(supabase));
-app.use('/api/analytics', analyticsRouter(supabase));
-app.use('/api/teachers', teachersRouter(supabase));
+const apiRouter = express.Router();
+apiRouter.use('/students', studentsRouter(supabase));
+apiRouter.use('/complaints', complaintsRouter(supabase));
+apiRouter.use('/analytics', analyticsRouter(supabase));
+apiRouter.use('/teachers', teachersRouter(supabase));
+
+// Health check on router too
+apiRouter.get('/health', (req, res) => {
+    res.json({ 
+        status: 'UP', 
+        supabase: !!supabase,
+        vercel: !!process.env.VERCEL,
+        mode: 'router'
+    });
+});
+
+// Mount router at both /api and root to handle Vercel routing variations
+app.use('/api', apiRouter);
+app.use(apiRouter); 
 
 // Serve static files (frontend) - moved after API routes
 app.use(express.static(path.join(__dirname, '..')));
