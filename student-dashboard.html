@@ -233,32 +233,33 @@
             try {
                 const response = await fetch(`${API_BASE}/students/session`, { credentials: 'include' });
 
-                if (!response.ok) {
-                    // Not authenticated - redirect to login
-                    window.location.href = "student.html";
+                if (response.ok) {
+                    const student = await response.json();
+                    document.getElementById("studentIdDisplay").innerHTML = `<span class="material-symbols-outlined text-sm">badge</span> ${student.studentId || ''}`;
+                    loadComplaints();
                     return;
                 }
-
-                const student = await response.json();
-                const displayEl = document.getElementById("studentIdDisplay");
-                if (displayEl) {
-                    displayEl.innerHTML = `<span class="material-symbols-outlined text-sm">badge</span> ${student.studentId || student.student_id || ''}`;
-                }
-
-                loadComplaints();
-            } catch(err) {
-                console.error('Session check failed:', err);
-                // Fall back to localStorage check
+                
+                // If session check fails, try fallback to localStorage (Serverless Workaround)
                 const loggedStudent = JSON.parse(localStorage.getItem("loggedStudent"));
-                if (!loggedStudent) {
-                    window.location.href = "student.html";
+                if (loggedStudent) {
+                    console.warn('Session missing, falling back to local storage data');
+                    document.getElementById("studentIdDisplay").innerHTML = `<span class="material-symbols-outlined text-sm">badge</span> ${loggedStudent.studentId || ''}`;
+                    loadComplaints();
                     return;
                 }
-                const displayEl = document.getElementById("studentIdDisplay");
-                if (displayEl) {
-                    displayEl.innerHTML = `<span class="material-symbols-outlined text-sm">badge</span> ${loggedStudent.studentId || ''}`;
+
+                // Truly not logged in
+                window.location.href = "student.html";
+            } catch(err) {
+                console.error('Session init error:', err);
+                const loggedStudent = JSON.parse(localStorage.getItem("loggedStudent"));
+                if (loggedStudent) {
+                    document.getElementById("studentIdDisplay").innerHTML = `<span class="material-symbols-outlined text-sm">badge</span> ${loggedStudent.studentId || ''}`;
+                    loadComplaints();
+                } else {
+                    window.location.href = "student.html";
                 }
-                loadComplaints();
             }
         }
 

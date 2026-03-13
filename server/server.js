@@ -281,14 +281,19 @@ setInterval(() => {
 }, 5 * 60 * 1000); // Check every 5 minutes
 
 // Session configuration
+if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+}
+
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'complaint-management-secret', // Change this in production
-    resave: false,
-    saveUninitialized: false,
+    secret: process.env.SESSION_SECRET || 'complaint-management-secret',
+    resave: true, // Force save for serverless
+    saveUninitialized: true, // Force initialization for serverless
     cookie: { 
-        secure: process.env.NODE_ENV === 'production', // Set to true for HTTPS in production
+        secure: process.env.NODE_ENV === 'production' || !!process.env.VERCEL,
+        sameSite: 'lax',
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        maxAge: 24 * 60 * 60 * 1000 
     }
 }));
 

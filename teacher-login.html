@@ -130,35 +130,21 @@
     <script>
         const API_BASE = '/api';
 
-        // Simple Toast function mimicking Tailwind styling
         function showToast(message, type = "success") {
             const container = document.getElementById("toastContainer");
             const toast = document.createElement("div");
-            
             const bgColor = type === "success" ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-red-50 text-red-600 border-red-200";
             const icon = type === "success" ? "check_circle" : "error";
-
             toast.className = `flex items-center gap-3 px-5 py-4 rounded-xl shadow-lg border ${bgColor} transform transition-all duration-300 translate-x-full opacity-0`;
-            toast.innerHTML = `
-                <span class="material-symbols-outlined">${icon}</span>
-                <span class="font-bold text-sm tracking-wide">${message}</span>
-            `;
-            
+            toast.innerHTML = `<span class="material-symbols-outlined">${icon}</span><span class="font-bold text-sm tracking-wide">${message}</span>`;
             container.appendChild(toast);
-            
-            // Animate in
-            setTimeout(() => {
-                toast.classList.remove("translate-x-full", "opacity-0");
-            }, 10);
-
-            // Animate out and remove
+            setTimeout(() => { toast.classList.remove("translate-x-full", "opacity-0"); }, 10);
             setTimeout(() => {
                 toast.classList.add("translate-x-full", "opacity-0");
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
 
-        // Login button click
         document.getElementById('loginBtn').addEventListener('click', async () => {
             const gmail = document.getElementById('loginGmail').value;
             const teacherId = document.getElementById('loginTeacherId').value;
@@ -179,9 +165,8 @@
                 const data = await response.json();
                 if (response.ok) {
                     showToast('Login successful!', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'teacher-dashboard.html';
-                    }, 800);
+                    localStorage.setItem("loggedTeacher", JSON.stringify(data));
+                    setTimeout(() => { window.location.href = 'teacher-dashboard.html'; }, 800);
                 } else {
                     showToast(data.error || 'Login failed', 'error');
                 }
@@ -189,25 +174,6 @@
                 showToast('Login failed. Please try again.', 'error');
             }
         });
-
-        // Banner copy logic snippet
-        const copyBtn = document.querySelector('.copy-btn');
-        if(copyBtn) {
-            copyBtn.addEventListener('click', function() {
-                const text = document.getElementById('publicUrlText').innerText;
-                navigator.clipboard.writeText(text).then(() => {
-                    const originalText = this.innerText;
-                    this.innerText = 'Copied!';
-                    this.classList.add('bg-green-100', 'text-green-800');
-                    this.classList.remove('text-indigo-700');
-                    setTimeout(() => {
-                        this.innerText = 'Copy URL';
-                        this.classList.remove('bg-green-100', 'text-green-800');
-                        this.classList.add('text-indigo-700');
-                    }, 2000);
-                });
-            });
-        }
     </script>
 </body>
 </html>
