@@ -235,7 +235,12 @@
 
                 if (response.ok) {
                     const student = await response.json();
-                    document.getElementById("studentIdDisplay").innerHTML = `<span class="material-symbols-outlined text-sm">badge</span> ${student.studentId || ''}`;
+                    document.getElementById("studentIdDisplay").innerHTML = `
+                        <div class="flex flex-col items-start gap-1">
+                            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">badge</span> ${student.studentId || ''}</span>
+                            <span class="flex items-center gap-1.5 text-xs opacity-80"><span class="material-symbols-outlined text-sm">mail</span> ${student.studentGmail || ''}</span>
+                        </div>
+                    `;
                     loadComplaints();
                     return;
                 }
@@ -244,7 +249,12 @@
                 const loggedStudent = JSON.parse(localStorage.getItem("loggedStudent"));
                 if (loggedStudent) {
                     console.warn('Session missing, falling back to local storage data');
-                    document.getElementById("studentIdDisplay").innerHTML = `<span class="material-symbols-outlined text-sm">badge</span> ${loggedStudent.studentId || ''}`;
+                    document.getElementById("studentIdDisplay").innerHTML = `
+                        <div class="flex flex-col items-start gap-1">
+                            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">badge</span> ${loggedStudent.studentId || ''}</span>
+                            <span class="flex items-center gap-1.5 text-xs opacity-80"><span class="material-symbols-outlined text-sm">mail</span> ${loggedStudent.gmail || ''}</span>
+                        </div>
+                    `;
                     loadComplaints();
                     return;
                 }
@@ -330,9 +340,15 @@
                         </span>
                     </div>
                     <p class="text-slate-600 mb-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100 text-sm leading-relaxed">${c.description}</p>
-                    <div class="flex items-center text-xs text-slate-400 font-medium">
-                        <span class="material-symbols-outlined text-[16px] mr-1">schedule</span>
-                        Submitted: ${new Date(c.timestamp || c.created_at || Date.now()).toLocaleString()}
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-400 font-medium">
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[16px]">schedule</span>
+                            Submitted: ${new Date(c.timestamp || c.created_at || Date.now()).toLocaleString()}
+                        </span>
+                        <span class="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                            <span class="material-symbols-outlined text-[14px]">notifications_active</span>
+                            Tracking sent to: ${c.studentGmail || 'Gmail'}
+                        </span>
                     </div>
                 `;
                 container.appendChild(div);

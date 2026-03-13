@@ -51,28 +51,40 @@ async function sendComplaintEmail(complaint, studentGmail) {
 
 // Send email for status update
 async function sendStatusUpdateEmail(complaint, newStatus, resolutionNotes) {
+    if (!complaint.studentGmail) {
+        console.warn(`[EMAIL] Skipping status update email for complaint ${complaint.id}: No student email found.`);
+        return;
+    }
+
     try {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: complaint.studentGmail,
-            subject: `Complaint Status Updated - ${newStatus.charAt(0).toUpperCase() + newStatus.replace('-', ' ')}`,
+            subject: `Update on Complaint #${complaint.id} - ${newStatus.toUpperCase()}`,
             html: `
-                <h2>Complaint Status Update</h2>
-                <p>Dear ${complaint.name},</p>
-                <p>The status of your complaint has been updated.</p>
-                <p><strong>Complaint ID:</strong> ${complaint.id}</p>
-                <p><strong>Category:</strong> ${complaint.category.charAt(0).toUpperCase() + complaint.category.slice(1)}</p>
-                <p><strong>Description:</strong> ${complaint.description}</p>
-                <p><strong>New Status:</strong> ${newStatus.charAt(0).toUpperCase() + newStatus.replace('-', ' ')}</p>
-                ${resolutionNotes ? `<p><strong>Resolution Notes:</strong> ${resolutionNotes}</p>` : ''}
-                <p><strong>Updated:</strong> ${new Date().toLocaleString()}</p>
+                <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                    <h2 style="color: #2563eb;">Complaint Status Updated</h2>
+                    <p>Dear ${complaint.name},</p>
+                    <p>The status of your complaint has been updated to: <strong style="color: #2563eb;">${newStatus.replace('-', ' ').toUpperCase()}</strong>.</p>
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <p><strong>Complaint ID:</strong> #${complaint.id}</p>
+                        <p><strong>Category:</strong> ${complaint.category}</p>
+                        ${resolutionNotes ? `<p><strong>Teacher Note:</strong> ${resolutionNotes}</p>` : ''}
+                    </div>
+                    <p>You can track further updates on your student dashboard.</p>
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                    <p style="font-size: 12px; color: #666;">This is an automated notification from the Complaint Management System.</p>
+                </div>
             `
         };
 
         await transporter.sendMail(mailOptions);
-        console.log('Status update email sent successfully');
+        console.log(`[EMAIL] Status update sent for #${complaint.id} (${newStatus})`);
     } catch (error) {
-        console.error('Error sending status update email:', error);
+        console.error(`[EMAIL] Failed to send status update for #${complaint.id}:`, error.message);
+        if (error.code === 'EAUTH') {
+            console.error('[EMAIL] HINT: Gmail SMTP authentication failed. Check your EMAIL_USER and EMAIL_PASS in .env');
+        }
     }
 }
 
