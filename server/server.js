@@ -162,8 +162,10 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'UP', 
         supabase: !!supabase,
+        database_ready: !!supabase,
         env: process.env.NODE_ENV,
-        vercel: !!process.env.VERCEL
+        vercel: !!process.env.VERCEL,
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -324,6 +326,12 @@ app.use(express.static(path.join(__dirname, '..')));
 
 // Function to log admin actions
 async function logAdminAction(timestamp, action, username, status, details) {
+    // Disable file logging on Vercel as the filesystem is read-only
+    if (process.env.VERCEL) {
+        console.log(`[ADMIN LOG] ${timestamp} | ${action} | ${username} | ${status} | ${details}`);
+        return;
+    }
+
     const fs = require('fs').promises;
     const logFilePath = path.join(__dirname, '..', 'admin-tracking.txt');
 
