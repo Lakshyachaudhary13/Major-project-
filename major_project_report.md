@@ -172,7 +172,7 @@ Functional requirements define the specific behaviors, functions, and features t
 
 3.3 Non-Functional Requirements
 Non-functional requirements specify the criteria used to judge the operation of the system, rather than specific behaviors.
-- **Security:** The system must employ cryptographic techniques, specifically utilizing the `bcrypt` algorithm with a minimum salt-rounds value of 10 to hash user passwords before database storage. Cross-Origin Resource Sharing (CORS) policies must be strictly configured.
+- **Security:** The system must employ cryptographic techniques, specifically utilizing the `bcryptjs` algorithm with a minimum salt-rounds value of 10 to hash user passwords before database storage. Cross-Origin Resource Sharing (CORS) policies must be strictly configured.
 - **Performance:** Given the potential for concurrent access by hundreds of students during peak college hours, the API must be stateless and lightweight. The objective is to keep server response times under 500 milliseconds.
 - **Usability:** The User Interface (UI) must adhere to modern Web Content Accessibility Guidelines (WCAG). It must utilize a responsive layout structure combining Flexbox and CSS Grid to ensure complete operability across mobile phones, tablets, and desktop computers.
 - **Reliability:** Data must be persistently stored in a highly available cloud environment, protected against local hardware failures via automated snapshot backups.
@@ -360,7 +360,8 @@ The client-side interface was sculpted utilizing HTML5 semantic tags (such as `<
 5.3 Back-End Implementation Details
 The core logic resides within the Node.js runtime environment. Express.js orchestrates the server.
 - **Middleware Integration:** Security is paramount. The server mitigates common security threats by integrating `helmet` to mask HTTP headers and prevent clickjacking. `cors` is implemented to enforce strict cross-origin policies so the API cannot be consumed by unauthorized third-party URLs. Additionally, `express-session` handles browser cookies, ensuring users don't have to repeatedly re-authenticate.
-- **Controllers:** The application is split into `UserController` (handling login logic and password verification) and `ComplaintController` (handling the CRUD logic for tickets).
+- **Controllers:** The application is split into specialized modules: `UserController` (handling login logic), `ComplaintController` (handling CRUD for grievances), and a dedicated `AnalyticsRouter` for real-time statistical generation. 
+- **System Monitoring:** A `/api/health` endpoint was implemented to verify real-time connectivity between the Vercel server and the Supabase database instance.
 
 5.4 Database Implementation 
 Supabase acts as PostgreSQL-as-a-Service. Instead of hosting a localized DB which restricts application access to a local intranet, Supabase puts the DB on the cloud. 
@@ -455,10 +456,14 @@ The following source code represents the primary structural logic utilized by th
 
 D.1 - Core PostgreSQL Database Schema (`schema.sql`)
 ```sql
--- Database Schema for Complaint Management System
--- Constructed using robust constraints to prevent orphaned data entries.
+-- 🛠️ SUPABASE INITIAL SCHEMA 🛠️
+-- Generated for Complaint Management System
 
-CREATE TABLE IF NOT EXISTS students (
+-- Enable necessary extensions
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Create Students Table
+CREATE TABLE IF NOT EXISTS public.students (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
     gmail TEXT UNIQUE NOT NULL,
@@ -468,7 +473,8 @@ CREATE TABLE IF NOT EXISTS students (
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS teachers (
+-- Create Teachers Table
+CREATE TABLE IF NOT EXISTS public.teachers (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
     gmail TEXT UNIQUE NOT NULL,
@@ -478,29 +484,28 @@ CREATE TABLE IF NOT EXISTS teachers (
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS admins (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS complaints (
+-- Create Complaints Table
+CREATE TABLE IF NOT EXISTS public.complaints (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     "studentId" TEXT NOT NULL,
+    "studentEmail" TEXT,
+    "studentGmail" TEXT,
     type TEXT NOT NULL,
     category TEXT DEFAULT 'general',
     description TEXT NOT NULL,
     status TEXT DEFAULT 'pending',
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     "resolutionNotes" TEXT,
-    "resolvedBy" TEXT
+    "resolvedBy" TEXT,
+    "resolvedAt" TIMESTAMP WITH TIME ZONE
 );
 
 -- Row Level Security (RLS) policies 
+ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.complaints ENABLE ROW LEVEL SECURITY;
+
 CREATE POLICY "Allow all access" ON students FOR ALL USING (true);
-CREATE POLICY "Allow all access" ON teachers FOR ALL USING (true);
 CREATE POLICY "Allow all access" ON complaints FOR ALL USING (true);
 ```
 
