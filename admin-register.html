@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - Complaint Management</title>
+    <title>Admin Registration - Complaint Management</title>
     
     <!-- Scripts & Fonts -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -53,7 +53,7 @@
 
     <!-- Background Accents -->
     <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div class="absolute top-[-10%] left-[-5%] w-[50%] h-[50%] bg-indigo-500/20 rounded-full blur-[120px] animate-blob"></div>
+        <div class="absolute top-[30%] left-[30%] w-[50%] h-[50%] bg-indigo-500/20 rounded-full blur-[120px] animate-blob"></div>
         <div class="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[120px] animate-blob" style="animation-delay: 2s;"></div>
     </div>
 
@@ -64,41 +64,41 @@
             
             <div class="text-center mb-10">
                 <div class="bg-indigo-100 text-indigo-600 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 transform hover:rotate-12 transition-transform duration-300">
-                    <span class="material-symbols-outlined text-4xl">admin_panel_settings</span>
+                    <span class="material-symbols-outlined text-4xl">how_to_reg</span>
                 </div>
-                <h1 class="text-3xl font-black text-slate-800 mb-2 tracking-tight">Admin Portal</h1>
-                <p class="text-slate-500 font-medium">System Operator Login</p>
+                <h1 class="text-3xl font-black text-slate-800 mb-2 tracking-tight">Admin Registration</h1>
+                <p class="text-slate-500 font-medium">Create a new system operator account</p>
             </div>
 
-            <form id="loginForm" class="space-y-5">
+            <form id="registerForm" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">Admin Username</label>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Create Username</label>
                     <div class="relative">
                         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">person</span>
-                        <input type="text" id="loginUsername" placeholder="e.g. superadmin" required 
+                        <input type="text" id="regUsername" placeholder="e.g. superadmin" required 
                                class="w-full pl-11 pr-4 py-3.5 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-800 placeholder-slate-400">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">Password</label>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Create Password</label>
                     <div class="relative">
                         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
-                        <input type="password" id="loginPassword" placeholder="Enter password" required 
+                        <input type="password" id="regPassword" placeholder="Minimum 6 characters" required 
                                class="w-full pl-11 pr-4 py-3.5 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-800 placeholder-slate-400">
                     </div>
                 </div>
 
-                <button type="button" id="loginBtn" class="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold py-4 rounded-xl shadow-[0_4px_20px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_25px_rgba(79,70,229,0.5)] hover:-translate-y-1 transition-all flex justify-center items-center gap-2 group mt-4">
-                    Authenticate
-                    <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">login</span>
+                <button type="button" id="registerBtn" class="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold py-4 rounded-xl shadow-[0_4px_20px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_25px_rgba(79,70,229,0.5)] hover:-translate-y-1 transition-all flex justify-center items-center gap-2 group mt-4">
+                    Register Admin
+                    <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">person_add</span>
                 </button>
             </form>
 
             <div class="mt-8 pt-6 border-t border-slate-200/60 text-center space-y-4">
                 <p class="text-sm font-medium text-slate-600">
-                    Need an admin account? 
-                    <a href="admin-register.html" class="text-indigo-600 font-bold hover:text-indigo-700 transition-colors">Register here</a>
+                    Already have an account? 
+                    <a href="admin-login.html" class="text-indigo-600 font-bold hover:text-indigo-700 transition-colors">Login here</a>
                 </p>
                 <a href="index.html" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
                     <span class="material-symbols-outlined text-lg">arrow_back</span>
@@ -129,31 +129,34 @@
             }, 3000);
         }
 
-        document.getElementById('loginBtn').addEventListener('click', async () => {
-            const username = document.getElementById('loginUsername').value;
-            const password = document.getElementById('loginPassword').value;
+        document.getElementById('registerBtn').addEventListener('click', async () => {
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
 
             if (!username || !password) {
                 showToast('Please fill in all fields', 'error');
                 return;
             }
 
+            if (password.length < 6) {
+                showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+
             try {
-                const response = await fetch(`${API_BASE}/admin/login`, {
+                const response = await fetch(`${API_BASE}/admin/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
                     body: JSON.stringify({ username, password })
                 });
 
                 const data = await response.json();
                 
                 if (response.ok) {
-                    showToast('Authentication successful!', 'success');
-                    localStorage.setItem("loggedAdmin", JSON.stringify(data.admin));
-                    setTimeout(() => { window.location.href = 'admin-dashboard.html'; }, 800);
+                    showToast('Registration successful! Redirecting...', 'success');
+                    setTimeout(() => { window.location.href = 'admin-login.html'; }, 1500);
                 } else {
-                    showToast(data.error || 'Invalid admin credentials', 'error');
+                    showToast(data.error || 'Server error', 'error');
                 }
             } catch(err) {
                 showToast('Error connecting to server', 'error');
