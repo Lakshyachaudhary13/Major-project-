@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Complaint Management</title>
+    
+    <!-- Scripts & Fonts -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4f46e5", /* Indigo */
+                        "primary-light": "#818cf8",
+                        "background-light": "#f8fafc",
+                        "background-dark": "#0f172a",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    animation: {
+                        blob: "blob 10s infinite",
+                        fadeIn: "fadeIn 0.3s ease-out forwards",
+                    },
+                    keyframes: {
+                        blob: {
+                            "0%": { transform: "translate(0px, 0px) scale(1)" },
+                            "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+                            "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+                            "100%": { transform: "translate(0px, 0px) scale(1)" },
+                        },
+                        fadeIn: {
+                            "0%": { opacity: "0", transform: "translateY(10px)" },
+                            "100%": { opacity: "1", transform: "translateY(0)" },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(79, 70, 229, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(79, 70, 229, 0.6); }
+    </style>
+</head>
+
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 min-h-screen relative overflow-x-hidden p-4 md:p-8">
+
+    <!-- Background Accents -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-5%] w-[50%] h-[50%] bg-indigo-500/20 rounded-full blur-[120px] animate-blob"></div>
+        <div class="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[120px] animate-blob" style="animation-delay: 2s;"></div>
+        <div class="absolute top-[30%] left-[30%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] animate-blob" style="animation-delay: 4s;"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto space-y-8 mt-4 md:mt-0">
+        
+        <!-- Header -->
+        <header class="glass rounded-3xl p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border-b-4 border-b-indigo-500">
+            <a href="index.html" class="flex flex-col md:flex-row items-center gap-6 text-center md:text-left group">
+                <div class="bg-indigo-100 text-indigo-600 w-20 h-20 rounded-2xl flex items-center justify-center border border-indigo-200 shadow-inner group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined text-4xl">admin_panel_settings</span>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-black text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">Admin Dashboard</h1>
+                    <p class="text-slate-500 font-medium">System overview and complete control</p>
+                </div>
+            </a>
+            
+            <button onclick="logout()" class="group flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-6 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all shadow-sm hover:shadow-md">
+                <span class="material-symbols-outlined font-medium transition-transform group-hover:-translate-x-1">logout</span>
+                Logout
+            </button>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="glass p-6 rounded-3xl border border-indigo-200/50 shadow-lg relative overflow-hidden">
+                <div class="flex items-start justify-between relative z-10">
+                    <div>
+                        <p class="text-slate-500 font-bold uppercase tracking-wider text-xs mb-1">Total Complaints</p>
+                        <h3 class="text-4xl font-black text-indigo-600" id="totalComplaintsCount">0</h3>
+                    </div>
+                    <div class="bg-indigo-100 text-indigo-600 p-3 rounded-2xl">
+                        <span class="material-symbols-outlined text-3xl">list_alt</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl border border-amber-200/50 shadow-lg relative overflow-hidden">
+                <div class="flex items-start justify-between relative z-10">
+                    <div>
+                        <p class="text-slate-500 font-bold uppercase tracking-wider text-xs mb-1">Pending Action</p>
+                        <h3 class="text-4xl font-black text-amber-600" id="pendingCount">0</h3>
+                    </div>
+                    <div class="bg-amber-100 text-amber-600 p-3 rounded-2xl">
+                        <span class="material-symbols-outlined text-3xl">schedule</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl border border-emerald-200/50 shadow-lg relative overflow-hidden">
+                <div class="flex items-start justify-between relative z-10">
+                    <div>
+                        <p class="text-slate-500 font-bold uppercase tracking-wider text-xs mb-1">Total Students</p>
+                        <h3 class="text-4xl font-black text-emerald-600" id="studentsCount">0</h3>
+                    </div>
+                    <div class="bg-emerald-100 text-emerald-600 p-3 rounded-2xl">
+                        <span class="material-symbols-outlined text-3xl">school</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl border border-blue-200/50 shadow-lg relative overflow-hidden">
+                <div class="flex items-start justify-between relative z-10">
+                    <div>
+                        <p class="text-slate-500 font-bold uppercase tracking-wider text-xs mb-1">Total Teachers</p>
+                        <h3 class="text-4xl font-black text-blue-600" id="teachersCount">0</h3>
+                    </div>
+                    <div class="bg-blue-100 text-blue-600 p-3 rounded-2xl">
+                        <span class="material-symbols-outlined text-3xl">badge</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="glass rounded-3xl shadow-xl overflow-hidden flex flex-col p-8">
+            <div class="flex items-center justify-between border-b pb-4 mb-4">
+                <h2 class="text-2xl font-bold flex items-center gap-2 text-slate-800">
+                    <span class="material-symbols-outlined text-indigo-500">monitoring</span>
+                    System Management
+                </h2>
+            </div>
+            
+            <div class="text-slate-600 text-center py-20 flex flex-col items-center justify-center">
+                <span class="material-symbols-outlined text-6xl opacity-30 mb-4">construction</span>
+                <p class="text-xl font-bold text-slate-700">Admin Section Under Construction</p>
+                <p class="mt-2 text-sm">Full administrative controls will be available here soon.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function logout() {
+            window.location.href = 'index.html';
+        }
+        // Placeholder data initialization
+        document.getElementById('totalComplaintsCount').innerText = Math.floor(Math.random() * 100) + 50;
+        document.getElementById('pendingCount').innerText = Math.floor(Math.random() * 30) + 10;
+        document.getElementById('studentsCount').innerText = Math.floor(Math.random() * 500) + 200;
+        document.getElementById('teachersCount').innerText = Math.floor(Math.random() * 50) + 20;
+    </script>
+</body>
+</html>
