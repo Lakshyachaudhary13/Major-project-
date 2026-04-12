@@ -432,6 +432,7 @@ app.use((err, req, res, next) => {
     console.error('Unhandled Error:', err);
     res.status(err.status || 500).json({ 
         error: err.message || 'Internal server error',
+        stack: process.env.VERCEL ? err.stack : undefined,
         path: req.path,
         method: req.method
     });
@@ -466,7 +467,7 @@ function getPublicURL() {
     }
 
     const localIP = getLocalIP();
-    return `http:
+    return `http://${localIP}:${PORT}`;
 }
 
 app.get('/api/public-url', (req, res) => {
@@ -496,9 +497,9 @@ async function startServer() {
 
         console.log('[SERVER] Starting HTTP server on port', PORT);
         httpServer.listen(PORT, '0.0.0.0', () => {
-            console.log(`[SERVER] HTTP Server running on http://localhost:${PORT}`);
-            console.log(`[SERVER] Access HTTP from current machine: http://localhost:${PORT}`);
-            console.log(`[SERVER] Access from OTHER DEVICES/LAPTOP: http://${LOCAL_IP}:${PORT}`);
+            console.log('[SERVER] HTTP Server running on http://localhost:' + PORT);
+            console.log('[SERVER] Access HTTP from current machine: http://localhost:' + PORT);
+            console.log('[SERVER] Access from OTHER DEVICES/LAPTOP: http://' + LOCAL_IP + ':' + PORT);
         });
 
         if (USE_HTTPS) {
@@ -524,9 +525,9 @@ async function startServer() {
 
             console.log('[SERVER] Starting HTTPS server on port', HTTPS_PORT);
             httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
-                console.log(`[SERVER] HTTPS Server running on https://localhost:${HTTPS_PORT}`);
-                console.log(`[SERVER] Access HTTPS from current machine: https://localhost:${HTTPS_PORT}`);
-                console.log(`[SERVER] Access HTTPS from other devices: https://${LOCAL_IP}:${HTTPS_PORT}`);
+                console.log('[SERVER] HTTPS Server running on https://localhost:' + HTTPS_PORT);
+                console.log('[SERVER] Access HTTPS from current machine: https://localhost:' + HTTPS_PORT);
+                console.log('[SERVER] Access HTTPS from other devices: https://' + LOCAL_IP + ':' + HTTPS_PORT);
                 console.log('[SERVER] Note: Self-signed certificate - browsers will show security warning');
             });
         } else {
