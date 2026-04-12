@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 
 module.exports = (supabase) => {
 
-  // Register a new teacher
   router.post('/register', async (req, res) => {
     const { name, gmail, teacherId, department, password } = req.body;
 
@@ -17,7 +16,7 @@ module.exports = (supabase) => {
     }
 
     try {
-      // Check if teacher ID already exists
+
       const { data: existingId, error: idError } = await supabase
         .from('teachers')
         .select('id')
@@ -28,7 +27,6 @@ module.exports = (supabase) => {
         return res.status(400).json({ error: 'Teacher ID already registered' });
       }
 
-      // Check if gmail already exists
       const { data: existingGmail, error: gmailError } = await supabase
         .from('teachers')
         .select('id')
@@ -64,7 +62,6 @@ module.exports = (supabase) => {
     }
   });
 
-  // Login a teacher
   router.post('/login', async (req, res) => {
     const { gmail, teacherId, password } = req.body;
 
@@ -85,7 +82,7 @@ module.exports = (supabase) => {
       }
 
       const isPasswordValid = await bcrypt.compare(password, teacher.password);
-      
+
       if (!isPasswordValid) {
         return res.status(401).json({ error: 'Invalid password' });
       }
@@ -108,7 +105,6 @@ module.exports = (supabase) => {
     }
   });
 
-  // Get all teachers (hide password)
   router.get('/', async (req, res) => {
     try {
       const { data: teachers, error } = await supabase
@@ -126,7 +122,6 @@ module.exports = (supabase) => {
     }
   });
 
-  // Check teacher session
   router.get('/session', async (req, res) => {
     if (req.session.teacherId) {
       res.json({ 
@@ -141,7 +136,6 @@ module.exports = (supabase) => {
     }
   });
 
-  // Logout teacher
   router.post('/logout', async (req, res) => {
     req.session.destroy((err) => {
       if (err) {
@@ -153,5 +147,3 @@ module.exports = (supabase) => {
 
   return router;
 };
-
-

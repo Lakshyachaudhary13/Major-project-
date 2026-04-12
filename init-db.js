@@ -1,6 +1,3 @@
-/*
- * Initialize Missing Database Tables
- */
 
 const mysql = require('mysql2');
 require('dotenv').config();
@@ -18,7 +15,6 @@ const db = mysql.createPool({
 
 console.log('\n=== Initializing Missing Tables ===\n');
 
-// Create teachers table
 db.execute(`CREATE TABLE IF NOT EXISTS teachers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -35,7 +31,6 @@ db.execute(`CREATE TABLE IF NOT EXISTS teachers (
         console.log('✅ teachers table initialized');
     }
 
-    // Create admins table
     db.execute(`CREATE TABLE IF NOT EXISTS admins (
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(255) UNIQUE NOT NULL,
@@ -48,7 +43,6 @@ db.execute(`CREATE TABLE IF NOT EXISTS teachers (
             console.log('✅ admins table initialized');
         }
 
-        // Create complaint_history table
         db.execute(`CREATE TABLE IF NOT EXISTS complaint_history (
             id INT AUTO_INCREMENT PRIMARY KEY,
             complaintId VARCHAR(255) NOT NULL,

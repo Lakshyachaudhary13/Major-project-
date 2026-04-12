@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 
 module.exports = (supabase) => {
 
-  // Register a new student
   router.post('/register', async (req, res) => {
     const { name, gmail, studentId, phone, password } = req.body;
 
@@ -17,7 +16,7 @@ module.exports = (supabase) => {
     }
 
     try {
-      // Check if student ID already exists in Supabase
+
       const { data: existingId, error: idError } = await supabase
         .from('students')
         .select('id')
@@ -28,7 +27,6 @@ module.exports = (supabase) => {
         return res.status(400).json({ error: 'Student ID already registered' });
       }
 
-      // Check if gmail already exists in Supabase
       const { data: existingGmail, error: gmailError } = await supabase
         .from('students')
         .select('id')
@@ -70,7 +68,6 @@ module.exports = (supabase) => {
     }
   });
 
-  // Login a student
   router.post('/login', async (req, res) => {
     const { studentId, gmail, password } = req.body;
 
@@ -115,7 +112,6 @@ module.exports = (supabase) => {
     }
   });
 
-  // Get all students (hide password)
   router.get('/', async (req, res) => {
     try {
       const { data: students, error } = await supabase
@@ -133,7 +129,6 @@ module.exports = (supabase) => {
     }
   });
 
-  // Logout
   router.post('/logout', (req, res) => {
     req.session.destroy(err => {
       if (err) return res.status(500).json({ error: 'Could not log out' });
@@ -141,7 +136,6 @@ module.exports = (supabase) => {
     });
   });
 
-  // Session
   router.get('/session', (req, res) => {
     if (req.session.studentId) {
       res.json({
@@ -157,4 +151,3 @@ module.exports = (supabase) => {
 
   return router;
 };
-

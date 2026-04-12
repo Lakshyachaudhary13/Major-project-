@@ -4,7 +4,6 @@ const router = express.Router();
 
 module.exports = (supabase) => {
 
-// Email configuration (replace with your SMTP settings)
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
@@ -15,7 +14,6 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Check if complaint is expired (older than 24 hours)
 function isComplaintExpired(timestamp) {
     const now = new Date();
     const complaintTime = new Date(timestamp);
@@ -24,7 +22,6 @@ function isComplaintExpired(timestamp) {
     return diffInMs > twentyFourHoursInMs;
 }
 
-// Send email for complaint submission
 async function sendComplaintEmail(complaint, studentGmail) {
     const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -49,7 +46,6 @@ async function sendComplaintEmail(complaint, studentGmail) {
     }
 }
 
-// Send email for status update
 async function sendStatusUpdateEmail(complaint, newStatus, resolutionNotes) {
     if (!complaint.studentGmail) {
         console.warn(`[EMAIL] Skipping status update email for complaint ${complaint.id}: No student email found.`);
@@ -88,11 +84,10 @@ async function sendStatusUpdateEmail(complaint, newStatus, resolutionNotes) {
     }
 }
 
-// Submit a new complaint
 router.post('/', async (req, res) => {
     console.log('Complaint submission attempt');
     console.log('Session:', req.session);
-    
+
     if (!req.session.studentId) {
         console.log('No studentId in session');
         return res.status(401).json({ error: 'Not logged in' });
@@ -134,7 +129,6 @@ router.post('/', async (req, res) => {
 
         const newComplaint = { id, name: studentName, studentId, studentGmail, type, category, description, status: 'pending', timestamp };
 
-        // Send email to student
         if (studentGmail) {
             sendComplaintEmail(newComplaint, studentGmail);
         }
@@ -146,7 +140,6 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Get complaints for the logged-in student
 router.get('/my', async (req, res) => {
     if (!req.session.studentId) {
         return res.status(401).json({ error: 'Not logged in' });
@@ -167,10 +160,9 @@ router.get('/my', async (req, res) => {
     }
 });
 
-// Get all complaints (admin only)
 router.get('/', async (req, res) => {
     const { search, status, category } = req.query;
-    
+
     let query = supabase.from('complaints').select('*');
 
     if (search) {
@@ -195,7 +187,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Get single complaint
 router.get('/:id', async (req, res) => {
     const { id } = req.params;
 
@@ -216,7 +207,6 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Update complaint status (admin only)
 router.put('/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status, resolutionNotes } = req.body;
@@ -256,7 +246,6 @@ router.put('/:id/status', async (req, res) => {
         complaint.resolutionNotes = resolutionNotes;
         complaint.resolvedBy = resolvedBy;
 
-        // Send email notification for status update
         if (oldStatus !== status) {
             sendStatusUpdateEmail(complaint, status, resolutionNotes);
         }
@@ -268,7 +257,6 @@ router.put('/:id/status', async (req, res) => {
     }
 });
 
-// Delete a resolved complaint (admin only)
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 

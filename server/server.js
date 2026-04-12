@@ -9,7 +9,7 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
-// selfsigned is lazy-loaded inside generateCertificates() to avoid crashes in serverless environments
+
 require('dotenv').config();
 
 const studentsRouter = require('./routes/students');
@@ -17,26 +17,24 @@ const complaintsRouter = require('./routes/complaints');
 const analyticsRouter = require('./routes/analytics');
 const teachersRouter = require('./routes/teachers');
 
-
 const app = express();
 const PORT = process.env.PORT || 8080;
-const USE_HTTPS = process.env.USE_HTTPS === 'true'; // Set to 'true' in .env to enable HTTPS
+const USE_HTTPS = process.env.USE_HTTPS === 'true'; 
 
-// Generate self-signed certificates if not present
 async function generateCertificates() {
     const keyPath = path.join(__dirname, 'key.pem');
     const certPath = path.join(__dirname, 'cert.pem');
-    
+
     console.log('[CERT] Checking for certificates at:', keyPath);
     const keyExists = fs.existsSync(keyPath);
     const certExists = fs.existsSync(certPath);
     console.log('[CERT] Key exists:', keyExists, '| Cert exists:', certExists);
-    
+
     if (!keyExists || !certExists) {
         console.log('[CERT] Generating self-signed certificates...');
         const attrs = [{ name: 'commonName', value: 'localhost' }];
         try {
-            const selfsigned = require('selfsigned'); // lazy-load: only used locally
+            const selfsigned = require('selfsigned'); 
             const pems = await selfsigned.generate(attrs, { days: 365 });
             console.log('[CERT] Generated certificate data, writing files...');
             fs.writeFileSync(keyPath, pems.private);
@@ -52,7 +50,6 @@ async function generateCertificates() {
     }
 }
 
-// Supabase database setup
 const supabaseUrl = (process.env.SUPABASE_URL || '').trim();
 const supabaseKey = (process.env.SUPABASE_KEY || '').trim();
 
@@ -68,7 +65,6 @@ const supabase = (supabaseUrl && supabaseKey)
     })
     : null;
 
-// Middleware to check Supabase connection
 const checkSupabase = (req, res, next) => {
     if (!supabase) {
         return res.status(503).json({ 
@@ -81,7 +77,6 @@ const checkSupabase = (req, res, next) => {
 
 app.use('/api', checkSupabase);
 
-// Self-test database connection on startup
 if (supabase) {
     supabase.from('students').select('*', { head: true, count: 'exact' })
         .then(({ error }) => {
@@ -96,53 +91,41 @@ if (supabase) {
         });
 }
 
-// Initialize routers (Supabase mode)
-
-// Schema is managed via Supabase Dashboard / MCP Migrations
-
-
-
-// Security middleware
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 
-// Security headers
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net", "https://cdn.tailwindcss.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdn.tailwindcss.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https:
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https:
             scriptSrcAttr: ["'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https:
         },
     },
 }));
 
-// Compression
 app.use(compression());
 
-// Rate limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000, 
+    max: 100, 
     message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
 
-// CORS
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
+
         if (!origin) return callback(null, true);
-        
-        // In development OR if ALLOWED_ORIGINS is not set, allow all
+
         if (process.env.NODE_ENV !== 'production' || !process.env.ALLOWED_ORIGINS) {
             return callback(null, true);
         }
-        
+
         const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',');
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
@@ -153,11 +136,9 @@ app.use(cors({
     credentials: true
 }));
 
-// Body parsing
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'UP', 
@@ -169,7 +150,6 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Request logger for debugging Vercel routing
 app.use((req, res, next) => {
     if (req.url.startsWith('/api')) {
         console.log(`[API REQUEST] ${req.method} ${req.url} | Original: ${req.originalUrl}`);
@@ -177,7 +157,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// Debug environment variables (safe check)
 app.get('/api/debug-env', (req, res) => {
     res.json({
         hasUrl: !!process.env.SUPABASE_URL,
@@ -188,22 +167,18 @@ app.get('/api/debug-env', (req, res) => {
     });
 });
 
-// Global device tracking
 const deviceTracker = new Map();
 
-// Phone access logging middleware (only external traffic)
 app.use((req, res, next) => {
     const fs = require('fs').promises;
     const timestamp = new Date().toISOString();
     const ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
     const userAgent = req.get('User-Agent') || 'unknown';
 
-    // Skip logging for localhost and internal traffic
     if (ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.1.')) {
         return next();
     }
 
-    // Extract device info from User-Agent
     let deviceInfo = 'Unknown Device';
     if (userAgent.includes('Android')) {
         deviceInfo = 'Android Phone';
@@ -231,7 +206,6 @@ app.use((req, res, next) => {
         deviceInfo = 'Linux Device';
     }
 
-    // Update device tracker with latest timestamp
     deviceTracker.set(ip, {
         timestamp,
         deviceInfo,
@@ -239,14 +213,13 @@ app.use((req, res, next) => {
         lastSeen: timestamp
     });
 
-    // Immediately update phone file with all current devices (non-blocking)
     updatePhoneFile();
 
     next();
 });
 
 async function updatePhoneFile() {
-    // Disable file operations on Vercel
+
     if (process.env.VERCEL) return;
 
     const fs = require('fs').promises;
@@ -268,7 +241,6 @@ async function updatePhoneFile() {
     }
 }
 
-// Periodic cleanup of old devices (devices not seen for 1 hour)
 setInterval(() => {
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
@@ -279,19 +251,17 @@ setInterval(() => {
         }
     }
 
-    // Update file after cleanup
     updatePhoneFile();
-}, 5 * 60 * 1000); // Check every 5 minutes
+}, 5 * 60 * 1000); 
 
-// Session configuration
 if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
 }
 
 app.use(session({
     secret: process.env.SESSION_SECRET || 'complaint-management-secret',
-    resave: true, // Force save for serverless
-    saveUninitialized: true, // Force initialization for serverless
+    resave: true, 
+    saveUninitialized: true, 
     cookie: { 
         secure: process.env.NODE_ENV === 'production' || !!process.env.VERCEL,
         sameSite: 'lax',
@@ -300,14 +270,12 @@ app.use(session({
     }
 }));
 
-// API routes
 const apiRouter = express.Router();
 apiRouter.use('/students', studentsRouter(supabase));
 apiRouter.use('/complaints', complaintsRouter(supabase));
 apiRouter.use('/analytics', analyticsRouter(supabase));
 apiRouter.use('/teachers', teachersRouter(supabase));
 
-// Health check on router too
 apiRouter.get('/health', (req, res) => {
     res.json({ 
         status: 'UP', 
@@ -317,16 +285,13 @@ apiRouter.get('/health', (req, res) => {
     });
 });
 
-// Mount router at both /api and root to handle Vercel routing variations
 app.use('/api', apiRouter);
 app.use(apiRouter); 
 
-// Serve static files (frontend) - moved after API routes
 app.use(express.static(path.join(__dirname, '..')));
 
-// Function to log admin actions
 async function logAdminAction(timestamp, action, username, status, details) {
-    // Disable file logging on Vercel as the filesystem is read-only
+
     if (process.env.VERCEL) {
         console.log(`[ADMIN LOG] ${timestamp} | ${action} | ${username} | ${status} | ${details}`);
         return;
@@ -343,9 +308,8 @@ async function logAdminAction(timestamp, action, username, status, details) {
     }
 }
 
-// Admin registration route
 app.post('/api/admin/register', async (req, res) => {
-    const { username, password } = req.body; // Removed email as it's not stored
+    const { username, password } = req.body; 
     const timestamp = new Date().toISOString();
 
     if (!username || !password) {
@@ -353,7 +317,7 @@ app.post('/api/admin/register', async (req, res) => {
     }
 
     try {
-        // Check if username already exists
+
         const { data: existingAdmin, error: fetchError } = await supabase
             .from('admins')
             .select('id')
@@ -361,12 +325,11 @@ app.post('/api/admin/register', async (req, res) => {
             .single();
 
         if (existingAdmin) {
-            // Log failed registration
+
             await logAdminAction(timestamp, 'REGISTER', username, 'FAILED', 'Username already exists');
             return res.status(400).json({ error: 'Username already exists' });
         }
 
-        // Hash password and insert new admin
         const hashedPassword = await bcrypt.hash(password, 10);
         const { data: result, error: insertError } = await supabase
             .from('admins')
@@ -376,19 +339,17 @@ app.post('/api/admin/register', async (req, res) => {
         if (insertError) throw insertError;
         const adminId = result[0].id;
 
-        // Log successful registration
         await logAdminAction(timestamp, 'REGISTER', username, 'SUCCESS', `Admin ID: ${adminId}`);
 
         res.status(201).json({ message: 'Registration successful' });
     } catch (error) {
         console.error('Error registering admin:', error);
-        // Log registration error
+
         await logAdminAction(timestamp, 'REGISTER', username, 'ERROR', 'Database error');
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// Admin login route
 app.post('/api/admin/login', async (req, res) => {
     const { username, password } = req.body;
     const timestamp = new Date().toISOString();
@@ -405,14 +366,14 @@ app.post('/api/admin/login', async (req, res) => {
             .single();
 
         if (error || !admin) {
-            // Log failed login attempt
+
             await logAdminAction(timestamp, 'LOGIN_FAILED', username, 'FAILED', 'Admin not found');
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
         const isPasswordValid = await bcrypt.compare(password, admin.password);
         if (!isPasswordValid) {
-            // Log failed login attempt
+
             await logAdminAction(timestamp, 'LOGIN_FAILED', username, 'FAILED', 'Invalid password');
             return res.status(401).json({ error: 'Invalid credentials' });
         }
@@ -420,19 +381,17 @@ app.post('/api/admin/login', async (req, res) => {
         req.session.adminId = admin.id;
         req.session.adminUsername = admin.username;
 
-        // Log successful login
         await logAdminAction(timestamp, 'LOGIN_SUCCESS', username, 'SUCCESS', `Session ID: ${req.session.id}`);
 
         res.json({ message: 'Login successful', admin: { username: admin.username } });
     } catch (error) {
         console.error('Error querying admin:', error);
-        // Log login error
+
         await logAdminAction(timestamp, 'LOGIN_FAILED', username, 'ERROR', 'Database query error');
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// Admin logout
 app.post('/api/admin/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
@@ -442,7 +401,6 @@ app.post('/api/admin/logout', (req, res) => {
     });
 });
 
-// Admin session check
 app.get('/api/admin/session', (req, res) => {
     if (req.session.adminId) {
         res.json({
@@ -454,17 +412,14 @@ app.get('/api/admin/session', (req, res) => {
     }
 });
 
-// Serve admin login page
 app.get('/admin-login', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'admin-login.html'));
 });
 
-// Default route to serve student dashboard
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'student-dashboard.html'));
 });
 
-// Catch-all 404 for API routes
 app.use('/api/*', (req, res) => {
     res.status(404).json({ 
         error: 'API endpoint not found',
@@ -473,7 +428,6 @@ app.use('/api/*', (req, res) => {
     });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
     console.error('Unhandled Error:', err);
     res.status(err.status || 500).json({ 
@@ -483,7 +437,6 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Get local IP address
 function getLocalIP() {
     const os = require('os');
     const interfaces = os.networkInterfaces();
@@ -497,12 +450,10 @@ function getLocalIP() {
     return '127.0.0.1';
 }
 
-// Function to get the public URL (ngrok or local)
 function getPublicURL() {
     const fs = require('fs');
     const publicUrlPath = path.join(__dirname, '..', 'public-url.txt');
-    
-    // Check if public URL file exists (set by ngrok script)
+
     if (fs.existsSync(publicUrlPath)) {
         try {
             const publicUrl = fs.readFileSync(publicUrlPath, 'utf8').trim();
@@ -513,13 +464,11 @@ function getPublicURL() {
             console.log('[SERVER] Error reading public URL:', err.message);
         }
     }
-    
-    // Fall back to local IP
+
     const localIP = getLocalIP();
-    return `http://${localIP}:${PORT}`;
+    return `http:
 }
 
-// API endpoint to get public URL
 app.get('/api/public-url', (req, res) => {
     const publicUrl = getPublicURL();
     res.json({ 
@@ -531,64 +480,61 @@ app.get('/api/public-url', (req, res) => {
 
 const LOCAL_IP = getLocalIP();
 
-// Start server
 async function startServer() {
     try {
         console.log('[SERVER] Starting server...');
-        
+
         const HTTPS_PORT = process.env.HTTPS_PORT || 8443;
-        
-        // Always start HTTP server
+
         console.log('[SERVER] Creating HTTP server...');
         const httpServer = http.createServer(app);
         console.log('[SERVER] HTTP server created');
-        
+
         httpServer.on('error', (err) => {
             console.error('[SERVER] HTTP Server error:', err);
         });
-        
+
         console.log('[SERVER] Starting HTTP server on port', PORT);
         httpServer.listen(PORT, '0.0.0.0', () => {
-            console.log(`[SERVER] HTTP Server running on http://0.0.0.0:${PORT}`);
-            console.log(`[SERVER] Access HTTP from current machine: http://127.0.0.1:${PORT}`);
-            console.log(`[SERVER] Access from OTHER DEVICES/LAPTOP: http://${LOCAL_IP}:${PORT}`);
+            console.log(`[SERVER] HTTP Server running on http:
+            console.log(`[SERVER] Access HTTP from current machine: http:
+            console.log(`[SERVER] Access from OTHER DEVICES/LAPTOP: http:
         });
-        
-        // Start HTTPS server if USE_HTTPS is enabled
+
         if (USE_HTTPS) {
             console.log('[SERVER] Generating certificates...');
             await generateCertificates();
             console.log('[SERVER] Certificates ready');
-            
+
             const keyPath = path.join(__dirname, 'key.pem');
             const certPath = path.join(__dirname, 'cert.pem');
             console.log('[SERVER] Reading certificate files...');
             const key = fs.readFileSync(keyPath);
             const cert = fs.readFileSync(certPath);
             console.log('[SERVER] Certificate files read successfully');
-            
+
             const httpsOptions = { key, cert };
             console.log('[SERVER] Creating HTTPS server...');
             const httpsServer = https.createServer(httpsOptions, app);
             console.log('[SERVER] HTTPS server created');
-            
+
             httpsServer.on('error', (err) => {
                 console.error('[SERVER] HTTPS Server error:', err);
             });
-            
+
             console.log('[SERVER] Starting HTTPS server on port', HTTPS_PORT);
             httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
-                console.log(`[SERVER] HTTPS Server running on https://0.0.0.0:${HTTPS_PORT}`);
-                console.log(`[SERVER] Access HTTPS from current machine: https://127.0.0.1:${HTTPS_PORT}`);
-                console.log(`[SERVER] Access HTTPS from other devices: https://YOUR_IP_ADDRESS:${HTTPS_PORT}`);
+                console.log(`[SERVER] HTTPS Server running on https:
+                console.log(`[SERVER] Access HTTPS from current machine: https:
+                console.log(`[SERVER] Access HTTPS from other devices: https:
                 console.log('[SERVER] Note: Self-signed certificate - browsers will show security warning');
             });
         } else {
             console.log('[SERVER] HTTPS is disabled. Set USE_HTTPS=true in .env to enable it.');
         }
-        
+
         console.log('[SERVER] Both servers started successfully!');
-        
+
     } catch (err) {
         console.error('[SERVER] Failed to start server:', err.message);
         console.error(err);
@@ -597,7 +543,7 @@ async function startServer() {
 }
 
 if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-    // Export the app for serverless platforms like Vercel
+
     module.exports = app;
 } else {
     startServer();

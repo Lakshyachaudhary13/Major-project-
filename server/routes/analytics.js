@@ -3,7 +3,6 @@ const router = express.Router();
 
 module.exports = (supabase) => {
 
-    // Get analytics data
     router.get('/complaints', async (req, res) => {
         try {
             const { dateRange = '30', category = 'all', status = 'all' } = req.query;
@@ -39,7 +38,7 @@ module.exports = (supabase) => {
                     resolved++;
                     if (item.timestamp) {
                         const submitted = new Date(item.timestamp);
-                        // Using resolvedAt if available, otherwise fallback to current time
+
                         const resolvedTime = item.resolvedAt ? new Date(item.resolvedAt) : new Date();
                         const diffInHours = (resolvedTime - submitted) / (1000 * 60 * 60);
                         resolutionTimeSum += diffInHours;
@@ -51,7 +50,6 @@ module.exports = (supabase) => {
 
             const avgResolutionTime = resolved > 0 ? (resolutionTimeSum / resolved) : 0;
 
-            // Get chart data
             const chartData = await getChartData(supabase, dateRange, category, status);
 
             res.json({
@@ -69,7 +67,6 @@ module.exports = (supabase) => {
         }
     });
 
-    // Get chart data
     async function getChartData(supabase, dateRange, category, status) {
         try {
             let query = supabase.from('complaints').select('*');
@@ -102,33 +99,29 @@ module.exports = (supabase) => {
 
             const { data: complaints, error } = await query;
             if (error) throw error;
-            
+
             const { data: categoryComplaints, error: categoryError } = await categoryFilterQuery;
             if (categoryError) throw categoryError;
 
-            // Trend query (always 30 days)
             let trendQuery = supabase.from('complaints').select('*');
             const trendDate = new Date();
             trendDate.setDate(trendDate.getDate() - 30);
             trendQuery = trendQuery.gte('timestamp', trendDate.toISOString());
             const { data: trendComplaints, error: trendError } = await trendQuery;
             if (trendError) throw trendError;
-            
-            // Status distribution
+
             const statusCounts = {};
             (complaints || []).forEach(c => {
                statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
             });
             const statusRows = Object.keys(statusCounts).map(s => ({ status: s, count: statusCounts[s] }));
 
-            // Category distribution
             const categoryCounts = {};
             (categoryComplaints || []).forEach(c => {
                categoryCounts[c.category] = (categoryCounts[c.category] || 0) + 1;
             });
             const categoryRows = Object.keys(categoryCounts).map(c => ({ category: c, count: categoryCounts[c] }));
 
-            // Trend data (last 30 days)
             const trendCounts = {};
             (trendComplaints || []).forEach(c => {
                 if (c.timestamp) {
@@ -138,20 +131,19 @@ module.exports = (supabase) => {
             });
             const trendRows = Object.keys(trendCounts).sort().map(d => ({ date: d, count: trendCounts[d] }));
 
-            // Resolution time distribution
             const resolutionCounts = {
                 '0-1 hours': 0,
                 '1-24 hours': 0,
                 '1-7 days': 0,
                 '7+ days': 0
             };
-            
+
             (complaints || []).filter(c => c.status === 'resolved').forEach(c => {
                 if (c.timestamp) {
                     const submitted = new Date(c.timestamp);
                     const resolvedTime = c.resolvedAt ? new Date(c.resolvedAt) : new Date();
                     const diffInHours = (resolvedTime - submitted) / (1000 * 60 * 60);
-                    
+
                     if (diffInHours <= 1) {
                         resolutionCounts['0-1 hours']++;
                     } else if (diffInHours <= 24) {
@@ -163,7 +155,7 @@ module.exports = (supabase) => {
                     }
                 }
             });
-            
+
             const resolutionRows = Object.keys(resolutionCounts).map(range => ({ timeRange: range, count: resolutionCounts[range] })).filter(r => r.count > 0);
 
             const chartData = {

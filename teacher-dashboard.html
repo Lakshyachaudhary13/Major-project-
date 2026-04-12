@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Dashboard - Complaint Management</title>
-    
-    <!-- Scripts & Fonts -->
+
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    
 
     <script>
         tailwind.config = {
@@ -52,7 +50,7 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
-        
+
         .modal-glass {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(16px);
@@ -74,22 +72,19 @@
 
 <body class="font-display bg-background-light dark:bg-background-dark text-slate-900 min-h-screen relative overflow-x-hidden p-4 md:p-8">
 
-    <!-- Background Accents -->
     <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
         <div class="absolute top-[-10%] left-[-5%] w-[50%] h-[50%] bg-emerald-500/20 rounded-full blur-[120px] animate-blob"></div>
         <div class="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-teal-500/10 rounded-full blur-[120px] animate-blob" style="animation-delay: 2s;"></div>
         <div class="absolute top-[30%] left-[30%] w-[40%] h-[40%] bg-green-500/10 rounded-full blur-[120px] animate-blob" style="animation-delay: 4s;"></div>
     </div>
 
-    <!-- public URL banner -->
     <div id="publicUrlBanner" class="hidden fixed top-0 left-0 w-full bg-gradient-to-r from-slate-800 to-slate-900 text-white text-center py-2 px-4 shadow-lg z-[100] border-b border-slate-700">
         <span id="publicUrlText" class="font-semibold text-sm mr-4 truncate inline-block max-w-[70%] align-middle tracking-wide shadow-text"></span>
         <button class="bg-white/10 hover:bg-white/20 text-white font-bold py-1 px-4 rounded text-xs transition duration-200 border border-white/20 shadow-sm uppercase tracking-wider copy-btn">Copy URL</button>
     </div>
 
     <div class="max-w-7xl mx-auto space-y-8 mt-4 md:mt-0">
-        
-        <!-- Header -->
+
         <header class="glass rounded-3xl p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border-b-4 border-b-emerald-500">
             <a href="index.html" class="flex flex-col md:flex-row items-center gap-6 text-center md:text-left group">
                 <div class="bg-emerald-100 text-emerald-600 w-20 h-20 rounded-2xl flex items-center justify-center border border-emerald-200 shadow-inner group-hover:scale-110 transition-transform">
@@ -106,16 +101,15 @@
                     </div>
                 </div>
             </a>
-            
+
             <button onclick="logout()" class="group flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-6 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all shadow-sm hover:shadow-md">
                 <span class="material-symbols-outlined font-medium transition-transform group-hover:-translate-x-1">logout</span>
                 Logout
             </button>
         </header>
 
-        <!-- Stats Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Pending -->
+
             <div class="glass p-6 rounded-3xl border border-amber-200/50 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-100 rounded-full blur-2xl group-hover:bg-amber-200 transition-colors pointer-events-none"></div>
                 <div class="flex items-start justify-between relative z-10">
@@ -129,7 +123,6 @@
                 </div>
             </div>
 
-            <!-- In Progress -->
             <div class="glass p-6 rounded-3xl border border-blue-200/50 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-100 rounded-full blur-2xl group-hover:bg-blue-200 transition-colors pointer-events-none"></div>
                 <div class="flex items-start justify-between relative z-10">
@@ -143,7 +136,6 @@
                 </div>
             </div>
 
-            <!-- Resolved -->
             <div class="glass p-6 rounded-3xl border border-emerald-200/50 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-100 rounded-full blur-2xl group-hover:bg-emerald-200 transition-colors pointer-events-none"></div>
                 <div class="flex items-start justify-between relative z-10">
@@ -157,7 +149,6 @@
                 </div>
             </div>
 
-            <!-- Rejected -->
             <div class="glass p-6 rounded-3xl border border-red-200/50 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group">
                 <div class="absolute -right-4 -top-4 w-24 h-24 bg-red-100 rounded-full blur-2xl group-hover:bg-red-200 transition-colors pointer-events-none"></div>
                 <div class="flex items-start justify-between relative z-10">
@@ -172,10 +163,8 @@
             </div>
         </div>
 
-        <!-- Main Content Area -->
         <div class="glass rounded-3xl shadow-xl overflow-hidden flex flex-col">
-            
-            <!-- Filters Toolbar -->
+
             <div class="p-6 md:p-8 border-b border-slate-200/60 bg-white/40">
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <h2 class="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
@@ -186,14 +175,13 @@
                     </h2>
 
                     <div class="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
-                        <!-- Search -->
+
                         <div class="relative w-full sm:w-64">
                             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                             <input type="text" id="searchInput" placeholder="Search ID, Name..." oninput="filterComplaints()"
                                    class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm font-medium">
                         </div>
 
-                        <!-- Status Filter -->
                         <div class="relative w-full sm:w-48">
                             <select id="statusFilter" onchange="filterComplaints()" class="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-sm appearance-none cursor-pointer text-slate-700">
                                 <option value="">All Statuses</option>
@@ -205,7 +193,6 @@
                             <span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-lg">expand_more</span>
                         </div>
 
-                        <!-- Category Filter -->
                         <div class="relative w-full sm:w-48">
                             <select id="categoryFilter" onchange="filterComplaints()" class="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium text-sm appearance-none cursor-pointer text-slate-700">
                                 <option value="">All Categories</option>
@@ -220,7 +207,6 @@
                 </div>
             </div>
 
-            <!-- Table Container -->
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -235,12 +221,11 @@
                         </tr>
                     </thead>
                     <tbody id="complaintsTableBody" class="divide-y divide-slate-100 bg-white/60">
-                        <!-- Filled by JS -->
+
                     </tbody>
                 </table>
             </div>
-            
-            <!-- Empty State (Hidden initially) -->
+
             <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center px-4">
                 <div class="bg-slate-100 text-slate-400 w-24 h-24 rounded-full flex items-center justify-center mb-4">
                     <span class="material-symbols-outlined text-5xl">search_off</span>
@@ -252,14 +237,11 @@
         </div>
     </div>
 
-    <!-- Modal Backdrop -->
     <div id="modalBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity duration-300" onclick="closeModal()"></div>
 
-    <!-- Complaint Details Modal -->
     <div id="complaintModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 md:p-6 pointer-events-none">
         <div class="modal-glass w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-full pointer-events-auto transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
-            
-            <!-- Modal Header -->
+
             <div class="px-8 py-6 border-b border-slate-200/60 flex items-center justify-between bg-white/50 sticky top-0 z-10">
                 <div class="flex items-center gap-3">
                     <div class="bg-emerald-100 text-emerald-600 p-2.5 rounded-xl">
@@ -275,21 +257,19 @@
                 </button>
             </div>
 
-            <!-- Modal Scrollable Content -->
             <div class="p-8 overflow-y-auto custom-scrollbar flex-grow relative bg-slate-50/30">
                 <div id="complaintDetails" class="space-y-6">
-                    <!-- Dynamic details loaded here -->
+
                 </div>
 
                 <div class="my-8 border-t border-slate-200"></div>
 
-                <!-- Update Controls -->
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
                     <h4 class="font-bold text-slate-800 flex items-center gap-2">
                         <span class="material-symbols-outlined text-emerald-500 text-lg">how_to_reg</span>
                         Resolution Dashboard
                     </h4>
-                    
+
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-2">Update Status</label>
                         <div class="relative">
@@ -311,7 +291,6 @@
                 </div>
             </div>
 
-            <!-- Modal Footer -->
             <div class="px-8 py-5 border-t border-slate-200/60 bg-white/80 sticky bottom-0 z-10 flex justify-end gap-3">
                 <button onclick="closeModal()" class="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
                     Cancel
@@ -325,7 +304,6 @@
         </div>
     </div>
 
-    <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-6 right-6 z-50 flex flex-col gap-3"></div>
 
     <script>
@@ -353,7 +331,7 @@
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            
+
             const bgColor = type === "success" ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-emerald-900/5" : "bg-red-50 text-red-600 border-red-200 shadow-red-900/5";
             const icon = type === "success" ? "check_circle" : "error";
 
@@ -362,9 +340,9 @@
                 <span class="material-symbols-outlined">${icon}</span>
                 <span class="font-bold text-sm tracking-wide">${message}</span>
             `;
-            
+
             container.appendChild(toast);
-            
+
             setTimeout(() => toast.classList.remove("translate-x-full", "opacity-0"), 10);
             setTimeout(() => {
                 toast.classList.add("translate-x-full", "opacity-0");
@@ -381,20 +359,20 @@
                     const data = await response.json();
                     return true;
                 }
-                
+
                 // Fallback for Vercel session issues
                 const loggedTeacher = JSON.parse(localStorage.getItem("loggedTeacher"));
                 if (loggedTeacher) {
                     console.warn('Session missing, falling back to local storage');
                     return true;
                 }
-                
+
                 window.location.href = 'teacher-login.html';
                 return false;
             } catch (error) {
                 const loggedTeacher = JSON.parse(localStorage.getItem("loggedTeacher"));
                 if (loggedTeacher) return true;
-                
+
                 window.location.href = 'teacher-login.html';
                 return false;
             }
@@ -407,7 +385,7 @@
                 });
                 if (response.ok) {
                     allComplaints = await response.json();
-                    
+
                     updateStats();
                     filterComplaints();
                 } else {
@@ -431,7 +409,7 @@
         function displayComplaints(complaints) {
             const tbody = document.getElementById('complaintsTableBody');
             const emptyState = document.getElementById('emptyState');
-            
+
             tbody.innerHTML = '';
 
             if(complaints.length === 0) {
@@ -540,7 +518,7 @@
 
                 details.innerHTML = `
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Student details box -->
+
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                             <div class="flex items-center gap-3 mb-4 text-emerald-600 border-b border-slate-100 pb-3">
                                 <span class="material-symbols-outlined">person</span>
@@ -553,7 +531,6 @@
                             </div>
                         </div>
 
-                        <!-- Ticket Details Box -->
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                             <div class="flex items-center gap-3 mb-4 text-emerald-600 border-b border-slate-100 pb-3">
                                 <span class="material-symbols-outlined">info</span>
@@ -567,7 +544,6 @@
                         </div>
                     </div>
 
-                    <!-- Description Block -->
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Detailed Description</p>
                         <p class="text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl text-sm border border-slate-100">
@@ -575,7 +551,6 @@
                         </p>
                     </div>
 
-                    <!-- Meta Data Block (if resolved) -->
                     ${complaint.resolvedBy ? `
                     <div class="bg-emerald-50 p-5 rounded-2xl border border-emerald-100">
                         <div class="flex items-center gap-2 mb-3 text-emerald-700 font-bold text-sm uppercase tracking-wider">
@@ -592,19 +567,19 @@
 
                 document.getElementById('statusSelect').value = complaint.status;
                 document.getElementById('resolutionNotes').value = complaint.resolutionNotes || '';
-                
+
                 // Show modal with animation
                 const backdrop = document.getElementById('modalBackdrop');
                 const modal = document.getElementById('complaintModal');
                 const content = document.getElementById('modalContent');
-                
+
                 backdrop.classList.remove('hidden');
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
-                
+
                 // Trigger reflow
                 void modal.offsetWidth;
-                
+
                 backdrop.classList.remove('opacity-0');
                 content.classList.remove('scale-95', 'opacity-0');
             }
@@ -614,10 +589,10 @@
             const backdrop = document.getElementById('modalBackdrop');
             const modal = document.getElementById('complaintModal');
             const content = document.getElementById('modalContent');
-            
+
             backdrop.classList.add('opacity-0');
             content.classList.add('scale-95', 'opacity-0');
-            
+
             setTimeout(() => {
                 backdrop.classList.add('hidden');
                 modal.classList.add('hidden');
@@ -637,7 +612,7 @@
 
                 if (response.ok) {
                     showToast(`Status updated to ${status}`, 'success');
-                    
+
                     const complaint = allComplaints.find(c => c.id === id);
                     if(complaint) {
                         complaint.status = status;
@@ -674,7 +649,7 @@
 
                 if (response.ok) {
                     showToast('Complaint status updated successfully', 'success');
-                    
+
                     // Optimistic update for UI feel if relying on local state mostly during dev
                     const complaint = allComplaints.find(c => c.id === currentComplaintId);
                     if(complaint) {

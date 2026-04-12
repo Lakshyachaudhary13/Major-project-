@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Registration - Complaint Management</title>
-    
-    <!-- Scripts & Fonts -->
+
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    
+
     <script>
         tailwind.config = {
             darkMode: "class",
@@ -51,7 +50,6 @@
 
 <body class="font-display bg-background-light dark:bg-background-dark text-slate-900 min-h-screen flex items-center justify-center p-6 relative overflow-y-auto">
 
-    <!-- Background Accents -->
     <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
         <div class="absolute top-[30%] left-[30%] w-[50%] h-[50%] bg-indigo-500/20 rounded-full blur-[120px] animate-blob"></div>
         <div class="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[120px] animate-blob" style="animation-delay: 2s;"></div>
@@ -59,9 +57,9 @@
 
     <div class="w-full max-w-md relative z-10">
         <div class="glass p-10 rounded-3xl shadow-2xl relative overflow-hidden border border-indigo-100">
-            <!-- decorative top border -->
+
             <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-400 to-indigo-600"></div>
-            
+
             <div class="text-center mb-10">
                 <div class="bg-indigo-100 text-indigo-600 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 transform hover:rotate-12 transition-transform duration-300">
                     <span class="material-symbols-outlined text-4xl">how_to_reg</span>
@@ -108,7 +106,6 @@
         </div>
     </div>
 
-    <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-6 right-6 z-50 flex flex-col gap-3"></div>
 
     <script>
@@ -151,7 +148,7 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     showToast('Registration successful! Redirecting...', 'success');
                     setTimeout(() => { window.location.href = 'admin-login.html'; }, 1500);

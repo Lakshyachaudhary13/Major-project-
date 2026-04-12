@@ -1,26 +1,15 @@
-// ========================================
-// Complaint Management System - Main JavaScript
-// ========================================
 
-// API Base URL
 const API_BASE = '/api';
 
-// Global state
 let currentUser = null;
 let currentTeacher = null;
 let allComplaints = [];
 
-// ========================================
-// Utility Functions
-// ========================================
-
-// Fetch and display public URL on page load
 async function initPublicURL() {
     try {
         const response = await fetch(`${API_BASE}/public-url`);
         const data = await response.json();
-        
-        // Create or update public URL display
+
         let urlBanner = document.getElementById('publicUrlBanner');
         if (!urlBanner) {
             urlBanner = document.createElement('div');
@@ -28,7 +17,7 @@ async function initPublicURL() {
             urlBanner.className = 'public-url-banner';
             document.body.insertBefore(urlBanner, document.body.firstChild);
         }
-        
+
         const isNgrok = data.publicUrl.includes('ngrok');
         urlBanner.innerHTML = `
             <div class="public-url-content">
@@ -43,11 +32,10 @@ async function initPublicURL() {
     }
 }
 
-// Copy public URL to clipboard
 function copyPublicURL() {
     const urlElement = document.getElementById('publicUrlValue');
     const successElement = document.getElementById('copySuccess');
-    
+
     if (urlElement) {
         navigator.clipboard.writeText(urlElement.textContent).then(() => {
             if (successElement) {
@@ -60,7 +48,6 @@ function copyPublicURL() {
     }
 }
 
-// Make copyPublicURL available globally
 window.copyPublicURL = copyPublicURL;
 
 function showToast(message, type = 'success') {
@@ -73,7 +60,6 @@ function showToast(message, type = 'success') {
 
     container.appendChild(toast);
 
-    // Remove after 3 seconds
     setTimeout(() => {
         toast.remove();
     }, 3000);
@@ -116,16 +102,12 @@ function debounce(func, wait) {
     };
 }
 
-// ========================================
-// Student Portal Functions
-// ========================================
-
 async function checkStudentSession() {
     try {
         const response = await fetch(`${API_BASE}/students/session`, { 
             credentials: 'include' 
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             currentUser = data;
@@ -179,7 +161,6 @@ function displayStudentComplaints(complaints) {
     const listElement = document.getElementById('complaintsList');
     if (!listElement) return;
 
-    // ensure we have an array to avoid runtime errors in tests or bad API responses
     if (!Array.isArray(complaints)) {
         console.warn('Expected complaints array but got', complaints);
         complaints = [];
@@ -224,7 +205,7 @@ async function loadStudentProfile() {
 
         if (response.ok) {
             const data = await response.json();
-            
+
             const nameEl = document.getElementById('profileName');
             const gmailEl = document.getElementById('profileGmail');
             const studentIdEl = document.getElementById('profileStudentId');
@@ -316,15 +297,12 @@ async function handleComplaintSubmission(event) {
         });
 
         showToast('Complaint submitted successfully!');
-        
-        // Reset form
+
         const form = document.getElementById('complaintForm');
         if (form) form.reset();
 
-        // Reload complaints
         loadStudentComplaints();
 
-        // Switch to complaints tab
         const complaintsTab = document.querySelector('[data-tab="my-complaints"]');
         if (complaintsTab) complaintsTab.click();
     } catch (error) {
@@ -343,16 +321,12 @@ async function handleStudentLogout() {
     }
 }
 
-// ========================================
-// Teacher Portal Functions
-// ========================================
-
 async function checkTeacherSession() {
     try {
         const response = await fetch(`${API_BASE}/teachers/session`, { 
             credentials: 'include' 
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             currentTeacher = data;
@@ -533,8 +507,7 @@ async function handleTeacherRegistration(event) {
         });
 
         showToast('Registration successful! Please login.');
-        
-        // Switch to login form
+
         const showLogin = document.getElementById('showLogin');
         if (showLogin) showLogin.click();
     } catch (error) {
@@ -553,14 +526,10 @@ async function handleTeacherLogout() {
     }
 }
 
-// ========================================
-// Complaint Management Functions
-// ========================================
-
 function openUpdateModal(complaintId) {
     const modal = document.getElementById('updateModal');
     const hiddenInput = document.getElementById('updateComplaintId');
-    
+
     if (modal && hiddenInput) {
         hiddenInput.value = complaintId;
         modal.classList.add('active');
@@ -575,7 +544,7 @@ function closeUpdateModal() {
 }
 
 async function updateComplaintStatus(eventOrId) {
-    // helper to let tests call with just an ID string
+
     let complaintId, status, resolutionNotes;
 
     if (typeof eventOrId === 'string') {
@@ -628,10 +597,6 @@ async function deleteComplaint(complaintId) {
     }
 }
 
-// ========================================
-// Filter Functions
-// ========================================
-
 function filterComplaints() {
     const searchInput = document.getElementById('searchInput')?.value.toLowerCase() || '';
     const statusFilter = document.getElementById('statusFilter')?.value || '';
@@ -642,16 +607,12 @@ function filterComplaints() {
                            c.studentId.toLowerCase().includes(searchInput);
         const matchesStatus = !statusFilter || c.status === statusFilter;
         const matchesCategory = !categoryFilter || c.category === categoryFilter;
-        
+
         return matchesSearch && matchesStatus && matchesCategory;
     });
 
     displayAllComplaints(filtered);
 }
-
-// ========================================
-// Tab Navigation
-// ========================================
 
 function studentSwitchTab(tabId) {
     const tabs = document.querySelectorAll('#dashboardSection .tab-content');
@@ -709,10 +670,6 @@ function teacherSwitchTab(tabId) {
     }
 }
 
-// ========================================
-// Public URL helper
-// ========================================
-
 async function fetchPublicUrl() {
     try {
         const resp = await fetch('/api/public-url');
@@ -723,7 +680,7 @@ async function fetchPublicUrl() {
         if (banner && textEl && data.publicUrl) {
             textEl.textContent = data.publicUrl;
             banner.classList.remove('hidden');
-            // copy button
+
             const copyBtn = banner.querySelector('.copy-btn');
             if (copyBtn) {
                 copyBtn.onclick = () => {
@@ -732,7 +689,7 @@ async function fetchPublicUrl() {
                     });
                 };
             }
-            // add padding to body so banner doesn't cover content
+
             document.body.style.paddingTop = '2.5rem';
         }
     } catch (e) {
@@ -740,40 +697,31 @@ async function fetchPublicUrl() {
     }
 }
 
-// ========================================
-// Initialize Portal Functions
-// ========================================
-
 function initStudentPortal() {
-    // Initialize public URL display
+
     fetchPublicUrl();
     checkStudentSession();
 
-    // Login form
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', handleStudentLogin);
     }
 
-    // Register form
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         registerForm.addEventListener('submit', handleStudentRegistration);
     }
 
-    // Complaint form
     const complaintForm = document.getElementById('complaintForm');
     if (complaintForm) {
         complaintForm.addEventListener('submit', handleComplaintSubmission);
     }
 
-    // Logout button
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleStudentLogout);
     }
 
-    // Tab navigation
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const tabId = this.getAttribute('data-tab');
@@ -781,7 +729,6 @@ function initStudentPortal() {
         });
     });
 
-    // Toggle login/register
     const showRegister = document.getElementById('showRegister');
     const showLogin = document.getElementById('showLogin');
     const loginSection = document.getElementById('loginSection');
@@ -805,41 +752,35 @@ function initStudentPortal() {
 }
 
 function initTeacherPortal() {
-    // Initialize public URL display
+
     fetchPublicUrl();
     checkTeacherSession();
 
-    // Login form
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', handleTeacherLogin);
     }
 
-    // Register form
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         registerForm.addEventListener('submit', handleTeacherRegistration);
     }
 
-    // Update form
     const updateForm = document.getElementById('updateForm');
     if (updateForm) {
         updateForm.addEventListener('submit', updateComplaintStatus);
     }
 
-    // Close modal
     const closeModal = document.getElementById('closeModal');
     if (closeModal) {
         closeModal.addEventListener('click', closeUpdateModal);
     }
 
-    // Logout button
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleTeacherLogout);
     }
 
-    // Search and filter
     const searchInput = document.getElementById('searchInput');
     const statusFilter = document.getElementById('statusFilter');
     const categoryFilter = document.getElementById('categoryFilter');
@@ -854,7 +795,6 @@ function initTeacherPortal() {
         categoryFilter.addEventListener('change', filterComplaints);
     }
 
-    // Tab navigation
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const tabId = this.getAttribute('data-tab');
@@ -862,7 +802,6 @@ function initTeacherPortal() {
         });
     });
 
-    // Toggle login/register
     const showRegister = document.getElementById('showRegister');
     const showLogin = document.getElementById('showLogin');
     const loginSection = document.getElementById('loginSection');
@@ -885,24 +824,18 @@ function initTeacherPortal() {
     }
 }
 
-// ========================================
-// Export Functions for Global Use
-// ========================================
-
 window.openUpdateModal = openUpdateModal;
 window.closeUpdateModal = closeUpdateModal;
 window.deleteComplaint = deleteComplaint;
 window.filterComplaints = filterComplaints;
 window.showToast = showToast;
 
-// expose public url helper for tests/other pages
 window.fetchPublicUrl = fetchPublicUrl;
 
-// aliases for tests (and legacy code)
 window.handleStudentRegister = handleStudentRegistration;
 window.handleComplaintSubmit = handleComplaintSubmission;
 window.handleAdminLogin = handleTeacherLogin;
-// also export the real names just in case
+
 window.handleStudentRegistration = handleStudentRegistration;
 window.handleComplaintSubmission = handleComplaintSubmission;
 window.handleTeacherLogin = handleTeacherLogin;
