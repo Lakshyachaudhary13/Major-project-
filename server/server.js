@@ -496,9 +496,9 @@ async function startServer() {
 
         console.log('[SERVER] Starting HTTP server on port', PORT);
         httpServer.listen(PORT, '0.0.0.0', () => {
-            console.log(`[SERVER] HTTP Server running on http:
-            console.log(`[SERVER] Access HTTP from current machine: http:
-            console.log(`[SERVER] Access from OTHER DEVICES/LAPTOP: http:
+            console.log(`[SERVER] HTTP Server running on http://localhost:${PORT}`);
+            console.log(`[SERVER] Access HTTP from current machine: http://localhost:${PORT}`);
+            console.log(`[SERVER] Access from OTHER DEVICES/LAPTOP: http://${LOCAL_IP}:${PORT}`);
         });
 
         if (USE_HTTPS) {
@@ -524,9 +524,9 @@ async function startServer() {
 
             console.log('[SERVER] Starting HTTPS server on port', HTTPS_PORT);
             httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
-                console.log(`[SERVER] HTTPS Server running on https:
-                console.log(`[SERVER] Access HTTPS from current machine: https:
-                console.log(`[SERVER] Access HTTPS from other devices: https:
+                console.log(`[SERVER] HTTPS Server running on https://localhost:${HTTPS_PORT}`);
+                console.log(`[SERVER] Access HTTPS from current machine: https://localhost:${HTTPS_PORT}`);
+                console.log(`[SERVER] Access HTTPS from other devices: https://${LOCAL_IP}:${HTTPS_PORT}`);
                 console.log('[SERVER] Note: Self-signed certificate - browsers will show security warning');
             });
         } else {
