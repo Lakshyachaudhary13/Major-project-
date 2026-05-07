@@ -102,6 +102,7 @@ The **Complaint Management System** digitizes the grievance redressal process, e
 ---
 
 ### 👨‍💻 Developed By
-**Lakshya Chaudhary**  
-*Major Project - Academic Year 2026*  
-[GitHub Profile](https://github.com/Lakshyachaudhary13)
+This project is developed for educational purposes as part of the Major Project requirement.
+
+---
+**Maintained by:** [Lakshya Chaudhary](https://github.com/Lakshyachaudhary13)
